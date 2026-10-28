@@ -42,15 +42,15 @@ About ten minutes. You need a Google TV or Android TV (Android 8 or newer) and a
    It downloads the code, installs the tools it needs, builds the app and puts it on your TV, and asks before anything important. Swap in your TV's IP and your city.
 3. **On the TV**, open *TV Studio* → *Home Screen* → *TV Studio*. That's when the TV asks *Allow USB debugging?* for TV Studio: tick *Always allow* and accept.
 
-### The ready APK
+### TV Studio test build
 
 No tools to install besides adb. The APK on the [latest release](https://github.com/simbasjungles/free-my-tv/releases/latest) has no TMDB key: add yours on the TV for the picks (*Home Settings* → *TMDB key*, [below](#the-tmdb-key)). It takes your city from the TV's time zone (change it in *Home Settings* → *City*).
 
 1. **On the TV**, do step 1 above.
-2. **On your computer**, download `FreeMyTV.apk` from the release and install it:
+2. **On your computer**, download `TVStudio.apk` from the release and install it:
    ```bash
    adb connect 192.168.1.50:5555
-   adb install -r FreeMyTV.apk
+   adb install -r TVStudio.apk
    ```
    On Android 14, Google Play Protect may hold the install with *Risky app blocked*: choose *More details* → *Install anyway*.
 3. **On the TV**, do step 3 above.
@@ -110,7 +110,7 @@ You need an LG TV (webOS 3 or newer) and a computer on the same Wi-Fi, with Pyth
 
 With an AI assistant, say *"Install TV Studio (github.com/simbasjungles/free-my-tv) on my LG TV at 192.168.1.50. I live in Lisbon."* It builds the app and hands you the install command, so you type the passphrase yourself.
 
-With the [webOS Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel), you can skip the computer: add the repository `https://freemytv.io/webos/apps.json` in the Channel's settings, and TV Studio shows up in its list. That's the release build: it takes the city from the TV's time zone (change it in *Home Settings* → *City*), and for the picks you type your [TMDB key](#the-tmdb-key) in *Home Settings* → *TMDB key*. If you installed your own build, don't update it from there, or the release replaces it.
+With the [webOS Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel), you can skip the computer: add the repository `https://github.com/studio-gh/free-my-tv/webos/apps.json` in the Channel's settings, and TV Studio shows up in its list. That's the release build: it takes the city from the TV's time zone (change it in *Home Settings* → *City*), and for the picks you type your [TMDB key](#the-tmdb-key) in *Home Settings* → *TMDB key*. If you installed your own build, don't update it from there, or the release replaces it.
 
 On webOS 6 and newer, LG doesn't let apps installed through Developer Mode see which apps the TV has. TV Studio then shows the well-known ones it finds (Netflix, YouTube, Prime Video, Disney+, Apple TV, Plex and more) and asks the TV, once, for the access LG's phone app uses: a message on the TV asks whether to allow TV Studio. Allow it, and from the next start all your apps show, with their icons.
 
@@ -277,7 +277,7 @@ It's your code, and Claude Code finds its way around it. Try:
 | [`webos/build.py`](webos/build.py), [`webos/install.py`](webos/install.py) | The LG app package and its install |
 | [`tizen/build.py`](tizen/build.py) | The Samsung app package |
 
-The website ([freemytv.io](https://freemytv.io)) is in [`docs/`](docs): plain HTML, CSS and JS on GitHub Pages.
+The website ([TV Studio](https://freemytv.io)) is in [`docs/`](docs): plain HTML, CSS and JS on GitHub Pages.
 
 ## Translations
 
