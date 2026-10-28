@@ -34,11 +34,11 @@ jobs:
           echo "ANDROID_HOME=$RUNNER_TEMP/sdk" >> "$GITHUB_ENV"
       # Validate the launcher and also publish a generic APK for TV installation.
       - name: Build generic Google TV APK
-        run: ./build.sh --generic
+        run: ./build.sh --generic --test-install
       - name: Upload Google TV APK
         uses: actions/upload-artifact@v4
         with:
-          name: FreeMyTV-Painel-Casa-APK
+          name: FreeMyTV-Painel-Casa-TEST-APK
           path: FreeMyTV.apk
           if-no-files-found: error
           retention-days: 14
