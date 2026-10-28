@@ -3165,22 +3165,21 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         });
     }
 
-    /** A compact native calendar strip, placed between the recommendations and the app shelf. */
+    /** A compact native calendar strip, kept clear of the app shelf on TV screens. */
     private void drawAgenda(Canvas c) {
         float x = MARGIN * k;
-        float labelY = 735 * k;
+        // Reserve a single legible event row; a second row overlapped the shelf on 1080p TV layouts.
+        float labelY = 704 * k;
+        agendaLabelPaint.setTextSize(18 * k);
+        agendaTextPaint.setTextSize(23 * k);
         agendaLabelPaint.setColor(tone(L_DIM, 0xFFB8B8BE));
         agendaTextPaint.setColor(tone(L_INK, 0xFFF4F4F5));
         c.drawText("PRÓXIMOS COMPROMISSOS · GUIGA E RÊ", x, labelY, agendaLabelPaint);
         List<String> lines = agendaLines;
-        if (lines.isEmpty()) {
-            c.drawText("Agenda indisponível no momento", x, 772 * k, agendaTextPaint);
-            return;
-        }
-        for (int i = 0; i < Math.min(2, lines.size()); i++) {
-            String line = TextUtils.ellipsize(lines.get(i), agendaTextPaint, (CONTENT_R - MARGIN * 2) * k, TextUtils.TruncateAt.END).toString();
-            c.drawText(line, x, (772 + i * 34) * k, agendaTextPaint);
-        }
+        String line = lines.isEmpty() ? "Agenda indisponível no momento" : lines.get(0);
+        line = TextUtils.ellipsize(line, agendaTextPaint,
+                (CONTENT_R - MARGIN * 2) * k, TextUtils.TruncateAt.END).toString();
+        c.drawText(line, x, 742 * k, agendaTextPaint);
     }
 
     private void drawClock(Canvas c) {
