@@ -137,6 +137,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private final Layer sky, heroLayer, status, platter, tiles, drawerLayer, sheetLayer, toastLayer;
     private int zone = Z_PHOTOS;
     private int photoMoodIndex;
+    private int photoNavIndex = 1;
+    private boolean photoNavFocused;
     private boolean photoSectionVisible = true;
 
     // Night look (like Apple's "Automatic" appearance): darker from sunset to sunrise, with a 2 s transition.
@@ -2571,6 +2573,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void activate() {
         wake();
+        if (photoSectionVisible && photoNavFocused) {
+            activatePhotoNav();
+            return;
+        }
         if (photoSectionVisible && zone == Z_PHOTOS) {
             showToast("Conecte o Google Fotos para trocar os álbuns. Esta versão ainda não tem essa integração.");
             return;
@@ -3303,13 +3309,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             float textWidth = nav.measureText(items[i]);
             float padX = 15 * k;
             float pillH = 48 * k;
-            if (i == 1) {
+            if (i == photoNavIndex && (photoNavFocused || i == 1)) {
                 RectF pill = new RectF(cursor - padX, centerY - pillH / 2,
                         cursor + textWidth + padX, centerY + pillH / 2);
                 fill.setShader(null);
                 fill.setStyle(Paint.Style.FILL);
-                fill.setColor(STUDIO_ACCENT);
+                fill.setColor(photoNavFocused ? 0xFFFFFCF4 : STUDIO_ACCENT);
                 c.drawRoundRect(pill, 24 * k, 24 * k, fill);
+                selected.setColor(photoNavFocused ? 0xFF2C2C2C : 0xFF2C2C2C);
                 c.drawText(items[i], cursor, centerY + Ui.halfCap(selected), selected);
             } else {
                 c.drawText(items[i], cursor, centerY + Ui.halfCap(nav), nav);
@@ -3321,6 +3328,31 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         fill.setStrokeWidth(1 * k);
         c.drawLine((CONTENT_R - 220) * k, 40 * k, (CONTENT_R - 220) * k, 91 * k, fill);
         Symbols.draw(getContext(), c, "search", (CONTENT_R - 145) * k, y, 25 * k, 0xFFFFFCF4);
+    }
+
+    private void activatePhotoNav() {
+        photoNavFocused = false;
+        switch (photoNavIndex) {
+            case 0:
+            case 1:
+                photoSectionVisible = true;
+                zone = Z_PHOTOS;
+                heroDirty = true;
+                break;
+            case 6:
+                photoSectionVisible = false;
+                openDrawer();
+                break;
+            case 7:
+                photoSectionVisible = false;
+                HomeApps.open(activity, HomeApps.tvSettings(), this, w / 2, h / 2, 1, 1);
+                break;
+            default:
+                showToast("Esta seção ainda está sendo implementada no TV Studio.");
+                break;
+        }
+        retarget(false);
+        invalidate();
     }
 
     private String greetingForCurrentTime() {
@@ -3617,6 +3649,22 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             click.move();
             return true;
         }
+        if (photoSectionVisible && photoNavFocused) {
+            if (dy > 0) {
+                photoNavFocused = false;
+                zone = Z_PHOTOS;
+            } else if (dy < 0) {
+                return true;
+            } else if (dx != 0) {
+                photoNavIndex = Math.max(0, Math.min(8, photoNavIndex + dx));
+            } else {
+                return true;
+            }
+            heroDirty = true;
+            retarget(false);
+            click.move();
+            return true;
+        }
         if (photoSectionVisible && zone == Z_PHOTOS) {
             if (dy > 0) {
                 photoSectionVisible = false;
@@ -3627,7 +3675,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 click.move();
                 return true;
             }
-            if (dy < 0) return true;
+            if (dy < 0) {
+                photoNavFocused = true;
+                photoNavIndex = 1;
+                heroDirty = true;
+                click.move();
+                return true;
+            }
             if (dx != 0) {
                 photoMoodIndex = Math.max(0, Math.min(3, photoMoodIndex + dx));
                 heroDirty = true;
