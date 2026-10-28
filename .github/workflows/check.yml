@@ -33,6 +33,22 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$RUNNER_TEMP/sdk" \
             "build-tools;34.0.0" "platforms;android-34" > /dev/null
           echo "ANDROID_HOME=$RUNNER_TEMP/sdk" >> "$GITHUB_ENV"
+      # A stable test keystore can be supplied through repository Actions secrets. Without it, build.sh
+      # intentionally creates a per-run local key, so that artifact is not suitable for in-place updates.
+      - name: Configure stable test signing key when available
+        env:
+          TEST_KEYSTORE_BASE64: ${{ secrets.TV_STUDIO_TEST_KEYSTORE_BASE64 }}
+          TEST_KEYSTORE_PASSWORD: ${{ secrets.TV_STUDIO_TEST_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$TEST_KEYSTORE_BASE64" ] && [ -n "$TEST_KEYSTORE_PASSWORD" ]; then
+            printf '%s' "$TEST_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/tv-studio-test.keystore"
+            echo "FREEMYTV_KEYSTORE=$RUNNER_TEMP/tv-studio-test.keystore" >> "$GITHUB_ENV"
+            echo "FREEMYTV_KEYSTORE_PASS=$TEST_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "Test APK will use the persistent TV_STUDIO_TEST_KEYSTORE signing identity." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No persistent test keystore configured. This APK has a per-run signature and cannot update a previously installed copy in place." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       # Validate the launcher and also publish a generic APK for TV installation.
       - name: Build generic Google TV APK
         run: ./build.sh --generic --test-install
