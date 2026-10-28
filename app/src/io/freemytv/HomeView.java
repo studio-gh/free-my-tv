@@ -3284,9 +3284,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** Photo-first Home with a full-screen ambient image and translucent family widgets. */
     private String greetingForCurrentTime() {
         int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
-        if (hour >= 5 && hour < 12) return "Bom dia.";
-        if (hour >= 12 && hour < 18) return "Boa tarde.";
-        return "Boa noite.";
+        if (hour >= 5 && hour < 12) return "Bom dia";
+        if (hour >= 12 && hour < 18) return "Boa tarde";
+        return "Boa noite";
     }
 
     private void drawPhotoHome(Canvas c) {
