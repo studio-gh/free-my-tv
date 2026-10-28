@@ -12,6 +12,11 @@ for arg in "$@"; do
   [ "$arg" = "--test-install" ] && TEST_INSTALL=true
 done
 
+# The runtime must target the same Android application ID that the selected manifest installs.
+# CI uses a side-by-side test package; normal builds keep the production ID.
+APP_ID=io.freemytv
+if $TEST_INSTALL; then APP_ID=io.freemytv.paineltest; fi
+
 # --- Tools
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 if [ -z "$SDK" ]; then
@@ -72,6 +77,7 @@ package io.freemytv;
 final class Config {
     private Config() {}
 
+    static final String APP_ID = "$APP_ID";
     static final String TMDB_KEY = "$(prop tmdb_key '')";
     static final String WATCHMODE_KEY = "$(prop watchmode_key '')";
     static final String PLEX_URL = "$(prop plex_url '')";
