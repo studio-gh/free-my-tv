@@ -43,6 +43,16 @@ https://support.google.com/googletv/answer/10070821
 
 This fallback is free and avoids building a second photo-storage pipeline. It is not equivalent to in-app mood switching, so the UI must describe it honestly.
 
+## Performance requirements
+
+- The mood picker must respond immediately to D-pad input and update its selected state locally.
+- Album authentication, API calls, metadata parsing, image downloads, image decoding and cache writes must run off the UI thread.
+- Start with a locally cached thumbnail or last frame. Never block the launcher while the first photo loads.
+- Use a bounded executor, request deduplication, cancellation for superseded selections and explicit image-size limits.
+- Keep slideshow transitions subtle, avoid continuous expensive blur, and pre-decode only a small number of next images.
+- Back must return to the launcher immediately even while a photo is loading. Loading failures must not trap focus.
+- Keep the feature behind a preference or feature flag until validated on the Philips 65PUG7406/78 Android TV 11.
+
 ## Mood semantics
 
 - **Família:** family moments, everyday photos, trips together.
