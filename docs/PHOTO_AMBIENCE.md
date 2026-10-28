@@ -22,7 +22,12 @@ The selector stores a small local preference mapping mood IDs to authorised coll
 First evaluate the official Google Photos Ambient API, designed for ambient experiences on TVs and photo frames:
 https://developers.google.com/photos/ambient/guides/about
 
-Confirm API access, app registration, OAuth for TV / limited-input devices, quota and policy requirements before implementing production code. Use the minimum scopes and a proper device/TV authentication flow.
+**Access gate:** Google's official partner-program documentation states that the Ambient API requires acceptance into the Google Photos Partner Program. This is a real external dependency, not just an OAuth setup task. Do not build a production client assuming access is available.
+
+1. First check whether TV Studio can be accepted into the partner program and submit an expression of interest if appropriate: https://developers.google.com/photos/partner-program/overview
+2. Until access is granted, do not ship code that calls the Ambient API or presents the integration as working.
+3. Keep the native Android/Google TV Ambient Mode as the immediate no-cost fallback.
+4. If partner access is approved, confirm app registration, OAuth for TV / limited-input devices, quotas and policy requirements before implementing production code. Use minimum scopes and a proper device/TV authentication flow.
 
 Important API distinction:
 - The Ambient API is the first candidate for a TV slideshow.
@@ -74,11 +79,12 @@ These are labels and user preferences, not inferred or auto-classified content. 
 
 ## Implementation stages
 
-1. **API feasibility:** verify current Ambient API access requirements, scopes, OAuth flow, quota and whether user-selected existing albums can be represented and switched per mood.
-2. **Device proof:** validate auth and a slideshow on the Philips 65PUG7406/78 (Android TV 11), with remote navigation and clean exit.
-3. **Mood selector:** implement the four presets and persist local mapping only after the API path is confirmed.
-4. **Resilience:** test expired auth, offline state, empty albums, unavailable media, app restart and rollback.
-5. **Release gate:** CI green and physical TV test before distributing a new APK. Keep the original launcher restorable.
+1. **API access gate:** verify eligibility and acceptance into the Google Photos Partner Program; the Ambient API is unavailable to assume as a generally open API.
+2. **API feasibility after acceptance:** verify scopes, OAuth flow, quota and whether user-selected media sources can be switched per mood.
+3. **Device proof:** validate auth and a slideshow on the Philips 65PUG7406/78 (Android TV 11), with remote navigation and clean exit.
+4. **Mood selector:** implement the four presets and persist local mapping only after the API path is confirmed.
+5. **Resilience:** test expired auth, offline state, empty albums, unavailable media, app restart and rollback.
+6. **Release gate:** CI green and physical TV test before distributing a new APK. Keep the original launcher restorable.
 
 ## Acceptance criteria
 
