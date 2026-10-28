@@ -3232,10 +3232,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (!force && now - agendaRequestedAt < 2 * 60_000L) return;
         agendaRequestedAt = now;
         LOADER.execute(() -> {
-            List<String> next = CalendarAgenda.fetch();
+            CalendarAgenda.Result result = CalendarAgenda.fetch();
             handler.post(() -> {
-                // Keep the last good agenda on temporary network/server failures instead of flashing an error.
-                if (next.isEmpty()) return;
+                // Retain last good data only on request/parse failure; a valid empty feed is allowed to clear old events.
+                if (!result.success) return;
+                List<String> next = result.lines;
                 if (!next.equals(agendaLines)) {
                     agendaLines = next;
                     heroDirty = true;
