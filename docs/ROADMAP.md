@@ -19,9 +19,17 @@ This file is the project backlog because GitHub Issues is disabled on this repos
 - [ ] Perform device-side smoke test on Philips 65PUG7406/78 (Android TV 11) before changing the recommended build.
 - [ ] Document rollback to Original launcher.
 
-Acceptance: no crash/frame hitch, new events appear after refresh, valid empty results clear old events, transient failures retain the last good agenda, and the original launcher remains restorable.
+Acceptance: no crash/frame hitch, new events appear after refresh, valid empty results clear old events, transient failures retain the last good data, and the original launcher remains restorable.
 
-## P1 · TV Studio Modo descanso: álbuns por mood
+## P1 · TV Studio photo-first home layout
+
+- [ ] Implement the approved layout in [`docs/HOME_LAYOUT.md`](HOME_LAYOUT.md): Google Photos / photo ambience occupies the initial hero; films and series appear only after navigating down.
+- [ ] Keep the four remote-first moods: Família, Visitas, Calma and Arte.
+- [ ] Never present a mock photo or mood selector as a working Google Photos integration.
+- [ ] Make Down enter the entertainment section and Up return to the photo area, with local and immediate focus changes.
+- [ ] Preserve the app shelf and essential system affordances without blocking on network or image decode.
+
+## P1 · TV Studio Modo descanso: albums by mood
 
 Goal: let the user switch between curated photo moods directly from the TV Studio launcher with the TV remote, using the user's existing Google Photos albums.
 
