@@ -1793,6 +1793,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** Weather for your location: now (large), the next 6 hours or 5 days, and sunrise and sunset. */
     private void drawWeatherCard(Canvas c, RectF r) {
         drawerCard(c, r);
+        if (zone == WIDGETS && widgetIndex == 0) {
+            fill.setShader(null);
+            fill.setStyle(Paint.Style.STROKE);
+            fill.setStrokeWidth(3 * k);
+            fill.setColor(tone(0xFF77777C, 0xFFF5F5F7));
+            c.drawRoundRect(r, 30 * k, 30 * k, fill);
+            fill.setStyle(Paint.Style.FILL);
+        }
         if (Ui.LEGACY) weatherSnapshot.draw(c, r, drawerCardsKey(), cc -> drawWeather(cc, r));
         else drawWeather(c, r);
     }
@@ -2432,6 +2440,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                     zone = Z_DRAWER;
                 } else if (dx != 0 && at + dx >= 0 && at + dx < on.size()) {
                     widgetIndex = on.get(at + dx);
+                    drawerDirty = true;
                 } else {
                     return;
                 }
