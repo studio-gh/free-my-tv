@@ -2403,6 +2403,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private void back() {
+        if (photoSectionVisible) return;
         if (sheetOpen) {
             closeSheet();
         } else if (zone == Z_DRAWER || zone == WIDGETS) {
@@ -2538,6 +2539,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void activate() {
         wake();
+        if (photoSectionVisible && zone == Z_PHOTOS) {
+            showToast("Conecte o Google Fotos para trocar os álbuns. Esta versão ainda não tem essa integração.");
+            return;
+        }
         if (reordering) {   // TalkBack's click while moving an app: drop it
             dropReorder();
             return;
@@ -2847,6 +2852,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private void a11yItems(List<Integer> out) {
+        if (photoSectionVisible) { out.add(a11yId(Z_PHOTOS, photoMoodIndex)); return; }
         if (sheetOpen) {
             for (int i = 0; i < others.size(); i++) out.add(a11yId(GRID, i));
             return;
@@ -2861,6 +2867,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private String a11yText(int id) {
         int group = (id - 1) / 1000, i = (id - 1) % 1000;
+        if (group == Z_PHOTOS) return new String[] {"Família", "Visitas", "Calma", "Arte"}[Math.max(0, Math.min(3, i))] + " · Modo descanso";
         switch (group) {
             case GRID:
                 if (i >= others.size()) return "";
@@ -2935,6 +2942,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private int a11yFocused() {
+        if (photoSectionVisible) return a11yId(Z_PHOTOS, photoMoodIndex);
         if (sheetOpen) return others.isEmpty() ? -1 : a11yId(GRID, gridIndex);
         switch (zone) {
             case Z_TOP: return a11yId(Z_TOP, topIndex);
@@ -2966,6 +2974,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void a11yFocus(int id) {
         wake();
         int group = (id - 1) / 1000, i = (id - 1) % 1000;
+        if (group == Z_PHOTOS) { photoSectionVisible = true; zone = Z_PHOTOS; photoMoodIndex = Math.max(0, Math.min(3, i)); heroDirty = true; return; }
         if (group == GRID) {
             if (!sheetOpen || i >= others.size()) return;
             gridIndex = i;
@@ -3196,7 +3205,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             if (HomeData.coinCount() > 0 || playingTab != null) drawQuotes(c);
             return;
         }
-        String hello = Ui.tr("Filmes e séries");
+        String hello = "Filmes e séries";
         c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
         // Text tabs (the selected one in bold, in the main text color); with focus on the tabs, the selected one gets
         // the white pill with a shadow and grows a little (the tvOS focus).
@@ -3449,6 +3458,25 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private boolean moveLight(int dx, int dy) {
+        if (photoSectionVisible && zone == Z_PHOTOS) {
+            if (dy > 0) {
+                photoSectionVisible = false;
+                zone = Z_TOP;
+                topIndex = tab;
+                retarget(false);
+                heroDirty = true;
+                click.move();
+                return true;
+            }
+            if (dy < 0) return true;
+            if (dx != 0) {
+                photoMoodIndex = Math.max(0, Math.min(3, photoMoodIndex + dx));
+                heroDirty = true;
+                click.move();
+                return true;
+            }
+            return true;
+        }
         switch (zone) {
             case Z_SHELF:
                 // Up from an empty shelf too: move()'s older zones (the hero, the corner capsule) aren't drawn any more.
