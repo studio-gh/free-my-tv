@@ -95,6 +95,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     // Light design (the L_ constants): title, tab bar, three recommendation cards and the shelf.
     // The tab bar is a 68 px capsule; the cards sit on the 5-column grid (the wide one spans 3).
     private static final float L_TITLE_BASE = 130, L_TABBAR_TOP = 158, L_TABBAR_H = 68, L_CARDS_TOP = 262, L_CARD_H = 442;
+    // Photo-first home layout. Google Photos connection remains a separate, explicitly gated integration.
+    private static final int Z_PHOTOS = 6;
+    private static final float PHOTO_HERO_TOP = 228, PHOTO_HERO_BOTTOM = 548, PHOTO_MOOD_TOP = 568, PHOTO_MOOD_H = 100;
     private static final float L_TALL_W = 320, L_CARD_GAP = 40, L_BUTTON = 68, L_BUTTON_GAP = 20, L_BUTTON_CY = 103;
     private static final float L_PLATTER_TOP = 814, L_TILE_H = 126;
     private static final float L_DATE_BASE = 330, L_CLOCK_BASE = 540, L_WEATHER_BASE = 626, L_QUOTES_BASE = 694;
@@ -126,7 +129,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     });
     private final RectF a11yRect = new RectF();
     private final Layer sky, heroLayer, status, platter, tiles, drawerLayer, sheetLayer, toastLayer;
-    private int zone = Z_SHELF;
+    private int zone = Z_PHOTOS;
+    private int photoMoodIndex;
+    private boolean photoSectionVisible = true;
 
     // Night look (like Apple's "Automatic" appearance): darker from sunset to sunrise, with a 2 s transition.
     private static final long NIGHT_MS = 2000;
@@ -3181,13 +3186,17 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void drawLightTop(Canvas c) {
         applyTone();
+        if (photoSectionVisible) {
+            drawPhotoHome(c);
+            return;
+        }
         if (!picksOn()) {
             drawClock(c);
             if (!drawerOpen) drawHomeAgendaWidget(c);
             if (HomeData.coinCount() > 0 || playingTab != null) drawQuotes(c);
             return;
         }
-        String hello = Ui.tr("For You");
+        String hello = Ui.tr("Filmes e séries");
         c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
         // Text tabs (the selected one in bold, in the main text color); with focus on the tabs, the selected one gets
         // the white pill with a shadow and grows a little (the tvOS focus).
@@ -3220,6 +3229,60 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = 0; i < slots; i++) if (i != top) drawLightCard(c, i);
         if (top >= 0) drawLightCard(c, top);
         if (HomeData.coinCount() > 0 || playingTab != null) drawQuotes(c);
+    }
+
+    /** Personal photo hero. This only uses photos already imported into TV Studio; it does not claim Google Photos is connected. */
+    private void drawPhotoHome(Canvas c) {
+        applyTone();
+        float x = MARGIN * k;
+        c.drawText("TV STUDIO", x, 78 * k, lTitle);
+        c.drawText("Modo descanso", x, 158 * k, lCardTitle);
+        c.drawText("Escolha um ambiente para a sua TV", x, 202 * k, lCardMeta);
+
+        Backdrop photo = Photos.on(getContext()) ? Photos.backdrop(getContext(), ownReady) : null;
+        Bitmap image = photo == null ? null : photo.image;
+        RectF panel = new RectF(x, PHOTO_HERO_TOP * k, (CONTENT_R - MARGIN) * k, PHOTO_HERO_BOTTOM * k);
+        float radius = 26 * k;
+        if (image != null) {
+            BitmapShader shader = new BitmapShader(image, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
+            coverImage(c, image, shader, panel, radius, 1);
+            fill.setShader(null);
+            fill.setColor(Ui.alpha(SMOKE, 0.30f));
+            c.drawRoundRect(panel, radius, radius, fill);
+        } else {
+            fill.setShader(null);
+            fill.setColor(tone(0xFF343F52, 0xFF151923));
+            c.drawRoundRect(panel, radius, radius, fill);
+            lTitle.setColor(0xFFF5F5F7);
+            lCardMeta.setColor(0xFFD4D8E0);
+            c.drawText("Suas fotos começam aqui", panel.left + 32 * k, panel.centerY() - 4 * k, lTitle);
+            c.drawText("Google Fotos ainda não conectado", panel.left + 32 * k, panel.centerY() + 42 * k, lCardMeta);
+        }
+
+        String[] moods = {"Família", "Visitas", "Calma", "Arte"};
+        float gap = 18 * k, mw = (panel.width() - 3 * gap) / 4;
+        float mt = PHOTO_MOOD_TOP * k, mh = PHOTO_MOOD_H * k;
+        for (int i = 0; i < moods.length; i++) {
+            RectF r = new RectF(panel.left + i * (mw + gap), mt, panel.left + i * (mw + gap) + mw, mt + mh);
+            boolean focused = i == photoMoodIndex && zone == Z_PHOTOS;
+            fill.setShader(null);
+            fill.setColor(focused ? 0xFFF5F5F7 : Ui.alpha(0xFF252B37, 0.96f));
+            c.drawRoundRect(r, 18 * k, 18 * k, fill);
+            if (focused) {
+                fill.setStyle(Paint.Style.STROKE);
+                fill.setStrokeWidth(3 * k);
+                fill.setColor(0xFFFFFFFF);
+                c.drawRoundRect(r, 18 * k, 18 * k, fill);
+                fill.setStyle(Paint.Style.FILL);
+            }
+            Paint name = focused ? lTabOn : lCardTitle;
+            name.setColor(focused ? 0xFF1D1D1F : 0xFFF5F5F7);
+            c.drawText(moods[i], r.left + 18 * k, r.centerY() + Ui.halfCap(name), name);
+        }
+        lCardTitle.setColor(tone(L_INK, WHITE));
+        lCardMeta.setColor(tone(L_DIM, 0xFF98989D));
+        c.drawText("↓  Filmes e séries", x, 740 * k, lCardTitle);
+        c.drawText("Use o controle remoto para continuar", x, 780 * k, lCardMeta);
     }
 
     private boolean picksOn() {
