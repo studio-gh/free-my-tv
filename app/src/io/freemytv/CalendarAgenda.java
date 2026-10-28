@@ -1,7 +1,5 @@
 package io.freemytv;
 
-import android.text.TextUtils;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -16,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
 
 /** Read-only public feed for the shared Guiga e Rê calendar. The endpoint never exposes event notes. */
 final class CalendarAgenda {
@@ -43,7 +40,7 @@ final class CalendarAgenda {
                 JSONObject root = new JSONObject(body.toString());
                 JSONArray events = root.optJSONArray("events");
                 if (events == null || events.length() == 0) {
-                    lines.add("No upcoming events");
+                    lines.add("Nenhum compromisso próximo");
                     return lines;
                 }
                 SimpleDateFormat dayFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -57,7 +54,7 @@ final class CalendarAgenda {
                     String when = "";
                     if (start.length() >= 10) {
                         String day = start.substring(0, 10);
-                        if (day.equals(today)) when = "Today";
+                        if (day.equals(today)) when = "Hoje";
                         else {
                             try {
                                 Date date = dayFormat.parse(day);
