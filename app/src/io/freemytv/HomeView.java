@@ -995,7 +995,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** Day or night right now (from the sun at your location); `animate`: with the transition. */
     private void checkNight(boolean animate) {
-        boolean want = data.isNight(System.currentTimeMillis());
+        boolean want = true; // TV Studio uses the approved dark theme at all hours.
         if (want == nightTarget) return;
         nightTarget = want;
         if (animate && running) {
