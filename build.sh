@@ -15,7 +15,7 @@ done
 # The runtime must target the same Android application ID that the selected manifest installs.
 # CI uses a side-by-side test package; normal builds keep the production ID.
 APP_ID=io.freemytv
-if $TEST_INSTALL; then APP_ID=io.freemytv.paineltest; fi
+if $TEST_INSTALL; then APP_ID=io.freemytv.paineltest2; fi
 
 # --- Tools
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
