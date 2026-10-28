@@ -294,7 +294,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private volatile List<String> agendaLines = new ArrayList<>();
     private long agendaRequestedAt;
     private final Paint agendaLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint agendaTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final TextPaint agendaTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     private boolean textDays;   // the weather card shows the next days (Home Settings → Forecast) and has them
     private final String[] priceText = new String[HomeData.COINS.length], changeText = new String[HomeData.COINS.length];
 
@@ -3171,14 +3171,15 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         float labelY = 735 * k;
         agendaLabelPaint.setColor(tone(L_DIM, 0xFFB8B8BE));
         agendaTextPaint.setColor(tone(L_INK, 0xFFF4F4F5));
-        c.drawText(Ui.tr("UP NEXT · GUIGA E RÊ"), x, labelY, agendaLabelPaint);
+        c.drawText("PRÓXIMOS COMPROMISSOS · GUIGA E RÊ", x, labelY, agendaLabelPaint);
         List<String> lines = agendaLines;
         if (lines.isEmpty()) {
-            c.drawText(Ui.tr("Shared calendar is loading"), x, 772 * k, agendaTextPaint);
+            c.drawText("Agenda indisponível no momento", x, 772 * k, agendaTextPaint);
             return;
         }
         for (int i = 0; i < Math.min(2, lines.size()); i++) {
-            c.drawText(lines.get(i), x, (772 + i * 34) * k, agendaTextPaint);
+            String line = TextUtils.ellipsize(lines.get(i), agendaTextPaint, (CONTENT_R - MARGIN * 2) * k, TextUtils.TruncateAt.END).toString();
+            c.drawText(line, x, (772 + i * 34) * k, agendaTextPaint);
         }
     }
 
