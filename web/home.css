@@ -17,12 +17,12 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #F5F5F7;
+  background: #ff961A;
 }
 
 body {
   font-family: 'Inter', 'LG Smart UI', 'Helvetica Neue', Arial, sans-serif;
-  color: #1D1D1F;
+  color: #fffcf4;
   -webkit-font-smoothing: antialiased;
   cursor: default;
 }
@@ -53,18 +53,18 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* MARK: - Background: the first pick's photo, very blurred and almost white (almost black at night). */
 
-#sky { background: #EBEBEF; }
+#sky { background: #2c2c2c; }
 #sky .grad { position: absolute; left: 0; top: 0; width: 100%; height: 100%; -webkit-transition: opacity 2s; transition: opacity 2s; }
-#sky .day { background: -webkit-linear-gradient(top, #F5F5F7, #E2E2E7); background: linear-gradient(#F5F5F7, #E2E2E7); }
-#sky .night { background: -webkit-linear-gradient(top, #1C1C1E, #0B0B0D); background: linear-gradient(#1C1C1E, #0B0B0D); opacity: 0; }
+#sky .day { background: -webkit-linear-gradient(top, #2c2c2c, #242424); background: linear-gradient(#2c2c2c, #242424); }
+#sky .night { background: -webkit-linear-gradient(top, #2c2c2c, #242424); background: linear-gradient(#2c2c2c, #242424); opacity: 1; }
 #sky canvas { position: absolute; left: -4%; top: -4%; width: 108%; height: 108%; opacity: 0; -webkit-transition: opacity 0.8s; transition: opacity 0.8s; }
 #sky canvas.on { opacity: 1; }
-#sky .veil { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: rgba(245, 245, 247, 0.74); -webkit-transition: background-color 2s; transition: background-color 2s; }
-#sky .lift { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #FFF; opacity: 0; -webkit-transition: opacity 0.45s, background-color 2s; transition: opacity 0.45s, background-color 2s; }
+#sky .veil { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: rgba(44, 44, 44, 0.84); -webkit-transition: background-color 2s; transition: background-color 2s; }
+#sky .lift { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #2c2c2c; opacity: 0; -webkit-transition: opacity 0.45s, background-color 2s; transition: opacity 0.45s, background-color 2s; }
 .night #sky .day { opacity: 0; }
 .night #sky .night { opacity: 1; }
-.night #sky .veil { background: rgba(11, 11, 13, 0.78); }
-.night #sky .lift { background: #000; }
+.night #sky .veil { background: rgba(44, 44, 44, 0.84); }
+.night #sky .lift { background: #242424; }
 .drawer-open #sky .lift { opacity: 0.32; }
 .night.drawer-open #sky .lift { opacity: 0.42; }
 
@@ -117,20 +117,20 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   font-size: 30px;
   font-weight: 500;
   line-height: 68px;
-  color: #6E6E73;
+  color: rgba(255, 252, 244, 0.68);
   -webkit-transition: -webkit-transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), background-color 0.17s, box-shadow 0.2s, color 0.17s;
   transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), background-color 0.17s, box-shadow 0.2s, color 0.17s;
 }
 .tab.on { font-weight: 600; color: #1D1D1F; }
 .tab.focus {
-  background: #FFF;
+  background: #ff961A;
   color: #1D1D1F;
   -webkit-transform: scale(1.05);
   transform: scale(1.05);
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.22);
 }
-.night #title, .night .tab.on { color: #F5F5F7; }
-.night .tab { color: rgba(245, 245, 247, 0.62); }
+.night #title, .night .tab.on { color: #fffcf4; }
+.night .tab { color: rgba(255, 252, 244, 0.62); }
 .night .tab.focus { color: #1D1D1F; box-shadow: 0 8px 26px rgba(0, 0, 0, 0.4); }
 
 /* Crypto quotes at the right end of the tab row: a quiet detail. */
@@ -141,7 +141,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   height: 28px;
   font-size: 21px;
   line-height: 28px;
-  color: #8E8E93;
+  color: rgba(255, 252, 244, 0.52);
   white-space: nowrap;
   -webkit-transition: opacity 0.17s;
   transition: opacity 0.17s;
@@ -169,7 +169,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.2s, background-color 0.17s;
 }
 .round .sym { position: absolute; left: 20px; top: 20px; width: 28px; height: 28px; }
-.round.focus { background: #FFF; -webkit-transform: scale(1.1); transform: scale(1.1); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24); }
+.round.focus { background: #fffcf4; -webkit-transform: scale(1.1); transform: scale(1.1); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24); }
 .round .tip {
   position: absolute;
   top: 88px;
@@ -220,7 +220,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   height: 100%;
   border-radius: 18px;
   overflow: hidden;
-  background-color: #DADADF;
+  background-color: #3a3a3a;
   background-size: cover;
   background-position: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
@@ -292,7 +292,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 .card.wide .meta { opacity: 1; }
 .card.edge .name, .card.edge .meta { visibility: hidden; }
-.night .card .img { background-color: #2C2C2E; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32); }
+.night .card .img { background-color: #363636; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32); }
 .night .card .name { color: #F5F5F7; }
 .night .card .meta { color: rgba(245, 245, 247, 0.62); }
 
@@ -401,9 +401,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), inset 0 1.5px 0 rgba(255, 255, 255, 0.95), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 .night .glass {
-  background: -webkit-linear-gradient(top, rgba(38, 38, 42, 0.78), rgba(17, 17, 19, 0.64));
-  background: linear-gradient(rgba(38, 38, 42, 0.78), rgba(17, 17, 19, 0.64));
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1.5px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  background: -webkit-linear-gradient(top, #363636, #2c2c2c);
+  background: linear-gradient(#363636, #2c2c2c);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), inset 0 1.5px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
 }
 
 .key {
@@ -419,10 +419,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .key .sym { position: absolute; left: 50%; top: 33px; width: 34px; height: 34px; margin-left: -17px; }
 .key .label { position: absolute; left: 8px; right: 8px; top: 82px; font-size: 23px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .key.off { color: #8E8E93; }
-.key.focus { background: #F5F5F7; color: #1C1C1E; -webkit-transform: scale(1.07); transform: scale(1.07); box-shadow: 0 16px 34px rgba(0, 0, 0, 0.42); z-index: 2; }
+.key.focus { background: #F5F5F7; color: #2c2c2c; -webkit-transform: scale(1.07); transform: scale(1.07); box-shadow: 0 16px 34px rgba(0, 0, 0, 0.42); z-index: 2; }
 .night .key { color: rgba(255, 255, 255, 0.95); }
 .night .key.off { color: rgba(255, 255, 255, 0.42); }
-.night .key.focus { color: #1C1C1E; }
+.night .key.focus { color: #2c2c2c; background: #ff961A; }
 
 .panel { position: absolute; top: 708px; height: 300px; border-radius: 30px; overflow: hidden; color: #1D1D1F; }
 .night .panel { color: #F5F5F7; }
@@ -463,7 +463,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 /* MARK: - Sheets over the home screen: All Apps, Settings, Shelf, Language, About */
 
 .sheet {
-  background: rgba(0, 0, 0, 0.66);
+  background: rgba(20, 20, 20, 0.88);
   color: #FFF;
   opacity: 0;
   visibility: hidden;
@@ -505,8 +505,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   border-radius: 40px;
   padding: 30px 30px 26px;
   box-sizing: border-box;
-  background: -webkit-linear-gradient(top, rgba(34, 36, 44, 0.96), rgba(18, 20, 26, 0.97));
-  background: linear-gradient(rgba(34, 36, 44, 0.96), rgba(18, 20, 26, 0.97));
+  background: -webkit-linear-gradient(top, #363636, #2c2c2c);
+  background: linear-gradient(#363636, #2c2c2c);
   box-shadow: 0 40px 90px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 .box .title { font-size: 38px; font-weight: 700; padding: 6px 18px 18px; letter-spacing: -0.01em; }
@@ -514,7 +514,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .box .list { position: relative; overflow: hidden; }
 .box .rows { -webkit-transition: -webkit-transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1); transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1); }
 .box .row { position: relative; height: 70px; margin-bottom: 8px; border-radius: 20px; font-size: 30px; font-weight: 600; line-height: 70px; padding: 0 24px; white-space: nowrap; -webkit-transition: background-color 0.13s; transition: background-color 0.13s; }
-.box .row.focus { background: rgba(255, 255, 255, 0.13); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.box .row.focus { background: rgba(255, 150, 26, 0.22); box-shadow: inset 0 1px 0 rgba(255, 252, 244, 0.12); }
 .box .row .value { position: absolute; right: 24px; top: 0; color: rgba(255, 255, 255, 0.92); font-weight: 500; }
 .box .row .value .chev { color: rgba(255, 255, 255, 0.35); margin: 0 10px; }
 .box .row .value .sym { width: 26px; height: 26px; vertical-align: -3px; }
@@ -542,7 +542,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .box .hint.steps { white-space: pre-line; line-height: 1.4; }
 .toggle { position: absolute; right: 24px; top: 13px; width: 78px; height: 44px; border-radius: 22px; background: #3A3D45; -webkit-transition: background-color 0.14s; transition: background-color 0.14s; }
 .toggle::after { content: ''; position: absolute; left: 4px; top: 4px; width: 36px; height: 36px; border-radius: 18px; background: #FFF; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); -webkit-transition: -webkit-transform 0.14s; transition: transform 0.14s; }
-.toggle.on { background: #3FD69B; }
+.toggle.on { background: #ff961A; }
 .toggle.on::after { -webkit-transform: translateX(34px); transform: translateX(34px); }
 
 /* MARK: - Screensaver: the picks' photos, slowly moving, and a clock */
@@ -584,7 +584,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   font-weight: 500;
   line-height: 1.3;
   color: rgba(255, 255, 255, 0.95);
-  background: rgba(17, 17, 19, 0.86);
+  background: rgba(44, 44, 44, 0.96);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
   opacity: 0;
   -webkit-transition: opacity 0.2s, -webkit-transform 0.2s;
@@ -598,3 +598,23 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* Tizen 2 and 1 GB TVs (see tv.js): no shadows or animations; their GPUs can't keep up while the focus moves. */
 .lite * { box-shadow: none !important; -webkit-transition: none !important; transition: none !important; }
+
+/* TV Studio approved theme: fixed charcoal, warm white, orange accent; subtle grain and soft elevation. */
+#sky .day { opacity: 0 !important; }
+#sky .night { opacity: 1 !important; }
+#sky .veil { background: rgba(44, 44, 44, 0.86) !important; }
+#title, .card .name, .row-title, .panel { color: #fffcf4; }
+.tab.on, .tab.focus, .round.focus, .key.focus { background-color: #ff961A; color: #2c2c2c; }
+.box .row.focus { background: rgba(255, 150, 26, 0.22); box-shadow: 0 5px 16px rgba(0,0,0,.24), inset 0 0 0 1px rgba(255,150,26,.45); }
+.tab.focus, .round, .card .img, #platter, .tile, .glass, .panel, .box, .cell .face {
+  box-shadow: 0 8px 24px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,252,244,.035);
+}
+#stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: .05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.38'/%3E%3C/svg%3E");
+}
