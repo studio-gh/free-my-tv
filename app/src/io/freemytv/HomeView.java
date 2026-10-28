@@ -3200,6 +3200,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             return;
         }
         if (!picksOn()) {
+            String hello = "Filmes e séries";
+            c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
+            lCardMeta.setColor(tone(L_DIM, 0xFF98989D));
+            c.drawText("Adicione sua chave TMDB em Ajustes do Início para ver recomendações.", MARGIN * k, 196 * k, lCardMeta);
             drawClock(c);
             if (!drawerOpen) drawHomeAgendaWidget(c);
             if (HomeData.coinCount() > 0 || playingTab != null) drawQuotes(c);
