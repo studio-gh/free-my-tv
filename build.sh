@@ -106,7 +106,7 @@ if $TEST_INSTALL; then
     -e 's/android:name="\./android:name="io.freemytv./g' \
     -e 's/android:authorities="io.freemytv.photos"/android:authorities="io.freemytv.paineltest.photos"/' \
     -e 's/android:taskAffinity="io.freemytv.settings"/android:taskAffinity="io.freemytv.paineltest.settings"/' \
-    -e 's/android:label="Free My TV"/android:label="Free My TV (Teste)"/g' \
+    -e 's/android:label="Free My TV"/android:label="TV Studio (Teste)"/g' \
     "$MANIFEST"
 fi
 # Fonts uncompressed: Android reads them straight from the APK.
