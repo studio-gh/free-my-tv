@@ -3282,6 +3282,47 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
      * Photo albums are imported locally; this screen does not claim a live Google Photos connection.
      */
     /** Photo-first Home with a full-screen ambient image and translucent family widgets. */
+    /**
+     * Native TV Studio navigation header. Keep this in the same renderer as the home screen
+     * so the APK and the approved preview share the same implementation, not a web-only mock.
+     */
+    private void drawPhotoNavBar(Canvas c) {
+        float y = 66 * k;
+        Paint brand = Ui.text(Ui.displaySemibold, 31 * k, 0xFFFFFCF4);
+        brand.setShadowLayer(10 * k, 0, 1 * k, 0x66000000);
+        c.drawText("⚡ TV Studio", 62 * k, y + Ui.halfCap(brand), brand);
+
+        String[] items = {"Início", "Fotos & Ambientes", "Calendário", "Recados", "Clima",
+                "Filmes & Séries", "Apps", "Configurações", "Descanso"};
+        float textSize = 22 * k;
+        Paint nav = Ui.text(Ui.medium, textSize, 0xFFE7E3DA);
+        Paint selected = Ui.text(Ui.semibold, textSize, 0xFF2C2C2C);
+        float cursor = 410 * k;
+        float centerY = y;
+        for (int i = 0; i < items.length; i++) {
+            float textWidth = nav.measureText(items[i]);
+            float padX = 15 * k;
+            float pillH = 48 * k;
+            if (i == 1) {
+                RectF pill = new RectF(cursor - padX, centerY - pillH / 2,
+                        cursor + textWidth + padX, centerY + pillH / 2);
+                fill.setShader(null);
+                fill.setStyle(Paint.Style.FILL);
+                fill.setColor(STUDIO_ACCENT);
+                c.drawRoundRect(pill, 24 * k, 24 * k, fill);
+                c.drawText(items[i], cursor, centerY + Ui.halfCap(selected), selected);
+            } else {
+                c.drawText(items[i], cursor, centerY + Ui.halfCap(nav), nav);
+            }
+            cursor += textWidth + 25 * k;
+        }
+        // Fine divider before search/clock, echoing the approved desktop layout.
+        fill.setColor(0x55FFFCF4);
+        fill.setStrokeWidth(1 * k);
+        c.drawLine((CONTENT_R - 220) * k, 40 * k, (CONTENT_R - 220) * k, 91 * k, fill);
+        Symbols.draw(getContext(), c, "search", (CONTENT_R - 145) * k, y, 25 * k, 0xFFFFFCF4);
+    }
+
     private String greetingForCurrentTime() {
         int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
         if (hour >= 5 && hour < 12) return "Bom dia";
@@ -3292,6 +3333,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void drawPhotoHome(Canvas c) {
         applyTone();
         float x = MARGIN * k;
+        drawPhotoNavBar(c);
 
         // Keep the photo as the full canvas backdrop. Add a gentle vertical gradient and edge vignette for contrast.
         fill.setShader(new LinearGradient(0, 0, 0, h,
