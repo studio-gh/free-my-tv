@@ -103,17 +103,20 @@ EOF
 "$BT/aapt2" compile --dir app/res -o out/res.zip
 MANIFEST=app/AndroidManifest.xml
 if $TEST_INSTALL; then
-  # Give the test build a distinct Android package so it can coexist with the existing, differently signed launcher.
-  # Keep Java/R resources in io.freemytv while the installed application ID is io.freemytv.paineltest.
+  # Use a separate package so the test launcher can coexist with every existing install.
+  # Runtime component IDs, manifest authority and task affinity all derive from the same APP_ID.
   MANIFEST=out/AndroidManifest-test.xml
   cp app/AndroidManifest.xml "$MANIFEST"
   sed -i \
-    -e 's/package="io.freemytv"/package="io.freemytv.paineltest"/' \
+    -e "s/package=\"io.freemytv\"/package=\"$APP_ID\"/" \
     -e 's/android:name="\./android:name="io.freemytv./g' \
-    -e 's/android:authorities="io.freemytv.photos"/android:authorities="io.freemytv.paineltest.photos"/' \
-    -e 's/android:taskAffinity="io.freemytv.settings"/android:taskAffinity="io.freemytv.paineltest.settings"/' \
+    -e "s/android:authorities=\"io.freemytv.photos\"/android:authorities=\"$APP_ID.photos\"/" \
+    -e "s/android:taskAffinity=\"io.freemytv.settings\"/android:taskAffinity=\"$APP_ID.settings\"/" \
     -e 's/android:label="Free My TV"/android:label="TV Studio (Teste)"/g' \
     "$MANIFEST"
+  grep -F "package=\"$APP_ID\"" "$MANIFEST" >/dev/null || { echo "Test manifest package does not match APP_ID=$APP_ID"; exit 1; }
+  grep -F "android:authorities=\"$APP_ID.photos\"" "$MANIFEST" >/dev/null || { echo "Test provider authority does not match APP_ID=$APP_ID"; exit 1; }
+  grep -F "android:taskAffinity=\"$APP_ID.settings\"" "$MANIFEST" >/dev/null || { echo "Test task affinity does not match APP_ID=$APP_ID"; exit 1; }
 fi
 # Fonts uncompressed: Android reads them straight from the APK.
 "$BT/aapt2" link -o out/base.apk -I "$AJ" --manifest "$MANIFEST" --custom-package io.freemytv --java out/gen out/res.zip \
