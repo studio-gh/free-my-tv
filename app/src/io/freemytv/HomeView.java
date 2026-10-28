@@ -3226,17 +3226,20 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         return Recs.hasKey(getContext());
     }
 
-    /** Loads only the public, title-and-time-only family calendar feed. */
+    /** Loads the public, title-and-time-only family calendar feed at most every two minutes. */
     private void refreshAgenda(boolean force) {
         long now = SystemClock.elapsedRealtime();
-        if (!force && now - agendaRequestedAt < 5 * 60_000L) return;
+        if (!force && now - agendaRequestedAt < 2 * 60_000L) return;
         agendaRequestedAt = now;
         LOADER.execute(() -> {
             List<String> next = CalendarAgenda.fetch();
             handler.post(() -> {
+                // Keep the last good agenda on temporary network/server failures instead of flashing an error.
+                if (next.isEmpty()) return;
                 if (!next.equals(agendaLines)) {
                     agendaLines = next;
                     heroDirty = true;
+                    drawerDirty = true;
                     wake();
                 }
             });
