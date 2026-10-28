@@ -1,6 +1,6 @@
-# Living Room OS: produto, arquitetura e roadmap
+# TV Studio: produto, arquitetura e roadmap
 
-> Objetivo: transformar o Free My TV numa home de sala de estar pessoal, rápida e útil para duas pessoas, com descoberta de filmes e séries, calendário familiar e atalhos para assistir. A primeira regra é respeitar a TV: manter o launcher original recuperável e nunca assumir que o Android permite ler dados privados de outros serviços.
+> Objetivo: transformar o TV Studio numa home de sala de estar pessoal, rápida e útil para duas pessoas, com descoberta de filmes e séries, calendário familiar e atalhos para assistir. A primeira regra é respeitar a TV: manter o launcher original recuperável e nunca assumir que o Android permite ler dados privados de outros serviços.
 
 ## Decisões de produto
 
