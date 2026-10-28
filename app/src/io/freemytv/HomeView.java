@@ -52,8 +52,8 @@ import java.util.function.Consumer;
  *  - three cards with the titles recommended for right now in the selected tab (Recs, from TMDB); the background is
  *    the first card's photo, heavily blurred and almost white (Backdrop); without picks, one of your own photos
  *    (Photos) the same way, or else a light gradient;
- *  - at the bottom, the glass shelf with the apps (icons in each brand's color, like the tvOS Dock; the focused one
- *    grows);
+ *  - without recommendations, the clock and weather are on the left and the shared family agenda is a glass card on the right;
+ *  - at the bottom, the glass shelf with the apps (icons in each brand's color, like the tvOS Dock; the focused one grows);
  *  - ↓ on the shelf: everything moves up and the bottom drawer appears (inputs, shortcuts, weather for the next hours or days
  *    and the shared family agenda); the background lightens (darkens at night). ↑ or Back closes it;
  *  - from sunset to sunrise, a night look: dark background, smoked glass and white text.
@@ -273,7 +273,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private final Paint veil = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint tileFill = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final RectF tmp = new RectF(), cell = new RectF(), screen = new RectF();
+    private final RectF tmp = new RectF(), cell = new RectF(), screen = new RectF(), homeAgendaRect = new RectF();
     private final TextPaint fitPaint = new TextPaint();
     private final RectF gridCell = new RectF();
     private LinearGradient[] tileShaders = new LinearGradient[0];
@@ -610,6 +610,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         h = height;
         k = w / 1920f;
         screen.set(0, 0, w, h);
+        homeAgendaRect.set(980 * k, 275 * k, (CONTENT_R - 80) * k, 680 * k);
+        snap(homeAgendaRect);
         scene.setSize(w, h);
         makePaints();
         gridLabels = null;
@@ -1906,20 +1908,50 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             fill.setStyle(Paint.Style.FILL);
         }
         float x = r.left + 30 * k;
+        cardTitle.setColor(tone(L_DIM, 0xB3FFFFFF));
+        cardDim.setColor(tone(L_DIM, 0xADFFFFFF));
+        agendaTextPaint.setTextSize(24 * k);
+        agendaTextPaint.setColor(drawerInk(0.95f));
         c.drawText("Agenda · Guiga e Rê", x, r.top + 54 * k, cardTitle);
         List<String> events = agendaLines;
+        float maxWidth = r.width() - 60 * k;
         if (events.isEmpty()) {
-            c.drawText("Agenda indisponível", x, r.top + 118 * k, cardDim);
+            c.drawText("Agenda indisponível", x, r.top + 118 * k, agendaTextPaint);
             c.drawText("Verifique a conexão", x, r.top + 160 * k, cardDim);
             return;
         }
-        float maxWidth = r.width() - 60 * k;
         for (int i = 0; i < events.size() && i < 3; i++) {
             String line = TextUtils.ellipsize(events.get(i), agendaTextPaint, maxWidth, TextUtils.TruncateAt.END).toString();
-            c.drawText(line, x, r.top + (112 + i * 54) * k, cardText);
+            c.drawText(line, x, r.top + (112 + i * 54) * k, agendaTextPaint);
         }
         if (events.size() > 3) {
             c.drawText("+" + (events.size() - 3) + " compromissos", x, r.bottom - 24 * k, cardDim);
+        }
+    }
+
+    /** Visible home-screen agenda card; the drawer version remains available for remote navigation. */
+    private void drawHomeAgendaWidget(Canvas c) {
+        RectF r = homeAgendaRect;
+        drawerCard(c, r);
+        cardTitle.setColor(tone(L_DIM, 0xB3FFFFFF));
+        cardDim.setColor(tone(L_DIM, 0xADFFFFFF));
+        agendaTextPaint.setTextSize(25 * k);
+        agendaTextPaint.setColor(drawerInk(0.95f));
+        float x = r.left + 30 * k;
+        float maxWidth = r.width() - 60 * k;
+        c.drawText("Agenda · Guiga e Rê", x, r.top + 56 * k, cardTitle);
+        List<String> events = agendaLines;
+        if (events.isEmpty()) {
+            c.drawText("Agenda indisponível", x, r.top + 132 * k, agendaTextPaint);
+            c.drawText("Verifique a conexão", x, r.top + 184 * k, cardDim);
+            return;
+        }
+        for (int i = 0; i < events.size() && i < 4; i++) {
+            String line = TextUtils.ellipsize(events.get(i), agendaTextPaint, maxWidth, TextUtils.TruncateAt.END).toString();
+            c.drawText(line, x, r.top + (126 + i * 58) * k, agendaTextPaint);
+        }
+        if (events.size() > 4) {
+            c.drawText("+" + (events.size() - 4) + " compromissos", x, r.bottom - 26 * k, cardDim);
         }
     }
 
@@ -3149,9 +3181,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void drawLightTop(Canvas c) {
         applyTone();
-        drawAgenda(c);
         if (!picksOn()) {
             drawClock(c);
+            if (!drawerOpen) drawHomeAgendaWidget(c);
             if (HomeData.coinCount() > 0 || playingTab != null) drawQuotes(c);
             return;
         }
@@ -3209,23 +3241,6 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 }
             });
         });
-    }
-
-    /** A compact native calendar strip, kept clear of the app shelf on TV screens. */
-    private void drawAgenda(Canvas c) {
-        float x = MARGIN * k;
-        // Reserve a single legible event row; a second row overlapped the shelf on 1080p TV layouts.
-        float labelY = 704 * k;
-        agendaLabelPaint.setTextSize(18 * k);
-        agendaTextPaint.setTextSize(23 * k);
-        agendaLabelPaint.setColor(tone(L_DIM, 0xFFB8B8BE));
-        agendaTextPaint.setColor(tone(L_INK, 0xFFF4F4F5));
-        c.drawText("PRÓXIMOS COMPROMISSOS · GUIGA E RÊ", x, labelY, agendaLabelPaint);
-        List<String> lines = agendaLines;
-        String line = lines.isEmpty() ? "Agenda indisponível no momento" : lines.get(0);
-        line = TextUtils.ellipsize(line, agendaTextPaint,
-                (CONTENT_R - MARGIN * 2) * k, TextUtils.TruncateAt.END).toString();
-        c.drawText(line, x, 742 * k, agendaTextPaint);
     }
 
     private void drawClock(Canvas c) {
