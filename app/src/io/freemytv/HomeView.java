@@ -3276,58 +3276,101 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (HomeData.coinCount() > 0 || playingTab != null) drawQuotes(c);
     }
 
-    /** Personal photo hero. This only uses photos already imported into TV Studio; it does not claim Google Photos is connected. */
+    /**
+     * Ambient-first home. The selected home photo is drawn by SKY behind every transparent UI layer.
+     * Photo albums are imported locally; this screen does not claim a live Google Photos connection.
+     */
     private void drawPhotoHome(Canvas c) {
         applyTone();
         float x = MARGIN * k;
-        c.drawText("TV STUDIO", x, 78 * k, lTitle);
-        c.drawText("Modo descanso", x, 158 * k, lCardTitle);
-        c.drawText("Escolha um ambiente para a sua TV", x, 202 * k, lCardMeta);
+        // A soft top-to-bottom veil plus edge vignette. It is deliberately subtle so the photo remains visible.
+        fill.setShader(new LinearGradient(0, 0, 0, h,
+                new int[] {0xB81A1A1A, 0x401A1A1A, 0x201A1A1A, 0x8A1A1A1A},
+                new float[] {0f, 0.22f, 0.60f, 1f}, Shader.TileMode.CLAMP));
+        c.drawRect(screen, fill);
+        fill.setShader(null);
+        fill.setColor(0x33121212);
+        c.drawRect(0, 0, 0.20f * w, h, fill);
+        c.drawRect(0.80f * w, 0, w, h, fill);
 
-        Backdrop photo = Photos.on(getContext()) ? Photos.backdrop(getContext(), ownReady) : null;
-        Bitmap image = photo == null ? null : photo.image;
-        RectF panel = new RectF(x, PHOTO_HERO_TOP * k, (CONTENT_R - MARGIN) * k, PHOTO_HERO_BOTTOM * k);
-        float radius = 26 * k;
-        if (image != null) {
-            BitmapShader shader = new BitmapShader(image, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
-            coverImage(c, image, shader, panel, radius, 1);
-            fill.setShader(null);
-            fill.setColor(Ui.alpha(SMOKE, 0.30f));
-            c.drawRoundRect(panel, radius, radius, fill);
-        } else {
-            fill.setShader(null);
-            fill.setColor(tone(0xFF343F52, 0xFF151923));
-            c.drawRoundRect(panel, radius, radius, fill);
-            lTitle.setColor(0xFFF5F5F7);
-            lCardMeta.setColor(0xFFD4D8E0);
-            c.drawText("Suas fotos começam aqui", panel.left + 32 * k, panel.centerY() - 4 * k, lTitle);
-            c.drawText("Google Fotos ainda não conectado", panel.left + 32 * k, panel.centerY() + 42 * k, lCardMeta);
+        // Home heading and weather: large on the left, directly over the photo.
+        lDate.setColor(0xD9FFFCF4);
+        lTitle.setColor(0xFFFFFCF4);
+        lCardTitle.setColor(0xFFFFFCF4);
+        lCardMeta.setColor(0xD9FFFCF4);
+        c.drawText(dateText.toUpperCase(java.util.Locale.ROOT),
+                x - Ui.leftBearing(lDate, dateText), 160 * k, lDate);
+        String hello = "Bom dia.";
+        c.drawText(hello, x - Ui.leftBearing(lTitle, hello), 246 * k, lTitle);
+        HomeData.Weather wx = data.weather;
+        String condition = Prefs.weather() && !Double.isNaN(wx.temp)
+                ? HomeData.degrees(wx.temp) + "  " + HomeData.condition(wx.code, wx.isDay)
+                : "Seu espaço compartilhado";
+        c.drawText(condition, x, 312 * k, lCardTitle);
+        if (Prefs.weather() && !Double.isNaN(wx.temp)) {
+            c.drawText(HomeData.highLow(wx, "  "), x, 350 * k, lCardMeta);
         }
 
-        String[] moods = {"Família", "Visitas", "Calma", "Arte"};
-        float gap = 18 * k, mw = (panel.width() - 3 * gap) / 4;
-        float mt = PHOTO_MOOD_TOP * k, mh = PHOTO_MOOD_H * k;
+        String[] moods = {"Família", "Visitas", "Viagem", "Arte"};
+        String[] icons = {"family_restroom", "groups", "flight", "image"};
+        float mw = 158 * k, mh = 140 * k, gap = 18 * k;
+        float left = x, top = 398 * k;
         for (int i = 0; i < moods.length; i++) {
-            RectF r = new RectF(panel.left + i * (mw + gap), mt, panel.left + i * (mw + gap) + mw, mt + mh);
+            RectF r = new RectF(left + i * (mw + gap), top,
+                    left + i * (mw + gap) + mw, top + mh);
             boolean focused = i == photoMoodIndex && zone == Z_PHOTOS;
             fill.setShader(null);
-            fill.setColor(focused ? 0xFFF5F5F7 : Ui.alpha(0xFF252B37, 0.96f));
-            c.drawRoundRect(r, 18 * k, 18 * k, fill);
-            if (focused) {
-                fill.setStyle(Paint.Style.STROKE);
-                fill.setStrokeWidth(3 * k);
-                fill.setColor(0xFFFFFFFF);
-                c.drawRoundRect(r, 18 * k, 18 * k, fill);
-                fill.setStyle(Paint.Style.FILL);
-            }
-            Paint name = focused ? lTabOn : lCardTitle;
-            name.setColor(focused ? 0xFF1D1D1F : 0xFFF5F5F7);
-            c.drawText(moods[i], r.left + 18 * k, r.centerY() + Ui.halfCap(name), name);
+            fill.setColor(focused ? 0xCC2C2C2C : 0xA82C2C2C);
+            c.drawRoundRect(r, 20 * k, 20 * k, fill);
+            fill.setStyle(Paint.Style.STROKE);
+            fill.setStrokeWidth((focused ? 3 : 1) * k);
+            fill.setColor(focused ? STUDIO_ACCENT : 0x66FFFCF4);
+            c.drawRoundRect(r, 20 * k, 20 * k, fill);
+            fill.setStyle(Paint.Style.FILL);
+            String symbol = i == 0 ? "family_restroom" : i == 1 ? "groups" : i == 2 ? "flight" : "image";
+            Symbols.draw(getContext(), c, symbol, r.centerX(), r.top + 48 * k, 50 * k,
+                    focused ? STUDIO_ACCENT : 0xFFFFFCF4);
+            Paint name = focused ? lTabOn : lCardMeta;
+            name.setColor(focused ? STUDIO_ACCENT : 0xFFFFFCF4);
+            name.setTextSize(25 * k);
+            name.setTextAlign(Paint.Align.CENTER);
+            c.drawText(moods[i], r.centerX(), r.bottom - 20 * k, name);
+            name.setTextAlign(Paint.Align.LEFT);
         }
+
+        // Translucent agenda preview on the right, with real loaded events where available.
+        RectF agenda = new RectF(980 * k, 178 * k, (CONTENT_R - 60) * k, 425 * k);
+        drawerCard(c, agenda);
+        cardTitle.setColor(0xFFFFFCF4);
+        cardDim.setColor(0xD9FFFCF4);
+        agendaTextPaint.setTextSize(25 * k);
+        agendaTextPaint.setColor(0xFFFFFCF4);
+        c.drawText("Agenda · Guiga e Rê", agenda.left + 28 * k, agenda.top + 48 * k, cardTitle);
+        List<String> events = agendaLines;
+        if (events.isEmpty()) {
+            c.drawText("Agenda indisponível", agenda.left + 28 * k, agenda.top + 105 * k, agendaTextPaint);
+        } else {
+            for (int i = 0; i < events.size() && i < 4; i++) {
+                String line = TextUtils.ellipsize(events.get(i), agendaTextPaint, agenda.width() - 56 * k,
+                        TextUtils.TruncateAt.END).toString();
+                c.drawCircle(agenda.left + 31 * k, agenda.top + (91 + i * 49) * k, 4 * k, fill);
+                c.drawText(line, agenda.left + 48 * k, agenda.top + (99 + i * 49) * k, agendaTextPaint);
+            }
+        }
+
+        // Family notes card is visible at Home level and is a shortcut to the existing notes surface if configured.
+        RectF notes = new RectF(1300 * k, 448 * k, (CONTENT_R - 60) * k, 700 * k);
+        drawerCard(c, notes);
+        c.drawText("Recados", notes.left + 25 * k, notes.top + 44 * k, cardTitle);
+        c.drawText("Os recados aparecem no painel da casa", notes.left + 25 * k, notes.top + 90 * k, cardDim);
+
+        // Small agenda/feature links stay above the entertainment fold.
+        cardTitle.setColor(0xFFFFFCF4);
+        c.drawText("↓  Filmes e séries", x, 638 * k, cardTitle);
+        lCardMeta.setColor(0xD9FFFCF4);
+        c.drawText("Use o controle remoto para continuar", x, 674 * k, lCardMeta);
         lCardTitle.setColor(tone(L_INK, WHITE));
         lCardMeta.setColor(tone(L_DIM, 0xFF98989D));
-        c.drawText("↓  Filmes e séries", x, 740 * k, lCardTitle);
-        c.drawText("Use o controle remoto para continuar", x, 780 * k, lCardMeta);
     }
 
     private boolean picksOn() {
