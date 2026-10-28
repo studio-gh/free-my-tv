@@ -66,6 +66,7 @@ final class CalendarAgenda {
                         if (!allDay && start.length() >= 16) when += " · " + start.substring(11, 16);
                         else when += " · dia todo";
                     }
+                    if (when.isEmpty()) when = "Em breve";
                     lines.add(when + "   " + title);
                 }
             }
