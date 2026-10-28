@@ -9,7 +9,7 @@
 Trending picks from your own apps, the weather at a glance, and a look that follows the sunset.<br>
 Open source. Built with Claude Code. One button to undo.
 
-[**TV Studio project**](https://freemytv.io) · [Install](#install) · [LG TVs](#lg-tvs-webos) · [Samsung TVs](#samsung-tvs-tizen) · [Any TV](#any-tv) · [Make it yours](#make-it-yours)
+[**TV Studio on GitHub**](https://github.com/studio-gh/free-my-tv) · [Install](#install) · [LG TVs](#lg-tvs-webos) · [Samsung TVs](#samsung-tvs-tizen) · [Any TV](#any-tv) · [Make it yours](#make-it-yours)
 
 <img src=".github/preview.webp" width="880" alt="The TV Studio home screen: a glass shelf of apps, trending picks, and a drawer with the weather and crypto prices">
 
