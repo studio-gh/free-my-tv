@@ -25,7 +25,8 @@ Acceptance: no crash/frame hitch, new events appear after refresh, valid empty r
 
 Goal: let the user switch between curated photo moods directly from the TV Studio launcher with the TV remote, using the user's existing Google Photos albums.
 
-- [ ] Verify the Google Photos Ambient API requirements, access eligibility, OAuth flow for TV / limited-input devices, quotas, policy and attribution before committing to production implementation.
+- [ ] Check eligibility and submit an expression of interest for the Google Photos Partner Program if appropriate; the Ambient API requires partner-program acceptance. Do not assume access is available.
+- [ ] Until Ambient API access is approved, use native Android/Google TV Ambient Mode as the free fallback and do not present in-app Google Photos album switching as implemented.
 - [ ] Prototype the smallest end-to-end integration on Android TV: authenticate one Google account, retrieve the authorised ambient media and render a slideshow.
 - [ ] Add a remote-first “Modo descanso” selector with presets: Família, Visitas, Calma and Arte.
 - [ ] Map each preset to a user-selected Google Photos collection/album where the API and account permissions support it; persist only preset-to-collection identifiers locally.
