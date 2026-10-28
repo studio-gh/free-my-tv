@@ -3282,6 +3282,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
      * Photo albums are imported locally; this screen does not claim a live Google Photos connection.
      */
     /** Photo-first Home with a full-screen ambient image and translucent family widgets. */
+    private String greetingForCurrentTime() {
+        int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+        if (hour >= 5 && hour < 12) return "Bom dia.";
+        if (hour >= 12 && hour < 18) return "Boa tarde.";
+        return "Boa noite.";
+    }
+
     private void drawPhotoHome(Canvas c) {
         applyTone();
         float x = MARGIN * k;
@@ -3303,7 +3310,25 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         lCardMeta.setColor(0xD9FFFCF4);
         c.drawText(dateText.toUpperCase(java.util.Locale.ROOT),
                 x - Ui.leftBearing(lDate, dateText), 150 * k, lDate);
-        String hello = "Bom dia.";
+
+        // A quiet digital clock in a small glass capsule, aligned to the upper-right safe area.
+        RectF clockCapsule = new RectF((CONTENT_R - 190) * k, 104 * k, CONTENT_R * k, 158 * k);
+        fill.setShader(null);
+        fill.setColor(0x702C2C2C);
+        c.drawRoundRect(clockCapsule, 28 * k, 28 * k, fill);
+        fill.setStyle(Paint.Style.STROKE);
+        fill.setStrokeWidth(1.5f * k);
+        fill.setColor(0x55FFFCF4);
+        c.drawRoundRect(clockCapsule, 28 * k, 28 * k, fill);
+        fill.setStyle(Paint.Style.FILL);
+        lClockQuote.setColor(0xFFFFFCF4);
+        lClockQuote.setTextAlign(Paint.Align.CENTER);
+        lClockQuote.setTextSize(29 * k);
+        c.drawText(clockText, clockCapsule.centerX(), clockCapsule.centerY() + Ui.halfCap(lClockQuote), lClockQuote);
+        lClockQuote.setTextAlign(Paint.Align.LEFT);
+        lClockQuote.setTextSize(28 * k);
+
+        String hello = greetingForCurrentTime();
         c.drawText(hello, x - Ui.leftBearing(lTitle, hello), 244 * k, lTitle);
 
         HomeData.Weather wx = data.weather;
