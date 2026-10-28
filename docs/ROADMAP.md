@@ -15,6 +15,27 @@ This file is the project backlog because GitHub Issues is disabled on this repos
 
 Acceptance: no crash/frame hitch, new events appear after refresh, valid empty results clear old events, transient failures retain the last good agenda, and the original launcher remains restorable.
 
+## P1 · TV Studio Modo descanso: álbuns por mood
+
+Goal: let the user switch between curated photo moods directly from the TV Studio launcher with the TV remote, using the user's existing Google Photos albums.
+
+- [ ] Verify the Google Photos Ambient API requirements, access eligibility, OAuth flow for TV / limited-input devices, quotas, policy and attribution before committing to production implementation.
+- [ ] Prototype the smallest end-to-end integration on Android TV: authenticate one Google account, retrieve the authorised ambient media and render a slideshow.
+- [ ] Add a remote-first “Modo descanso” selector with presets: Família, Visitas, Calma and Arte.
+- [ ] Map each preset to a user-selected Google Photos collection/album where the API and account permissions support it; persist only preset-to-collection identifiers locally.
+- [ ] Keep a fallback that opens the native Google TV / Android TV Ambient Mode settings for album selection if in-app album listing or switching is not supported.
+- [ ] Keep photo tokens and OAuth credentials out of the APK source, repository, logs and URLs; request only the minimum scopes and provide a disconnect/reset path.
+- [ ] Handle expired permissions, unavailable media, offline mode and an empty album without crashing or trapping remote focus.
+- [ ] Preserve TV Studio's original-launcher rollback path and test burn-in-safe slideshow behavior on Philips 65PUG7406/78 (Android TV 11).
+
+Mood defaults:
+- **Família:** family moments and everyday photos.
+- **Visitas:** shareable travel, landscapes and art; avoid private albums.
+- **Calma:** sea, nature and quiet photography.
+- **Arte:** artwork and visual inspiration.
+
+Technical constraint: Google Photos Picker API is a user-mediated media selection flow, while the Library API is limited to content created by the app. Do not assume either API can freely enumerate every existing Google Photos album. Validate the dedicated Ambient API before choosing the implementation. The native system Ambient Mode is the no-cost fallback and can already display user-selected Google Photos albums on supported devices.
+
 ## P1 · Brazil-first discovery and watchlist
 
 - [ ] Set the product default region to BR and language to pt-BR where appropriate, without silently overriding explicit TV settings.
