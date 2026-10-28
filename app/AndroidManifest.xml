@@ -94,7 +94,7 @@
         android:name=".App"
         android:label="Free My TV"
         android:icon="@drawable/tv_studio_icon"
-        android:banner="@drawable/banner"
+        android:banner="@drawable/tv_studio_banner"
         android:allowBackup="false"
         android:usesCleartextTraffic="false">
 
