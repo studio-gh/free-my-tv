@@ -139,6 +139,7 @@ const moodImages={
 'Arte':"url('https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=1800&q=85')"};
 function setMood(mood){document.querySelectorAll('[data-mood]').forEach(x=>x.classList.toggle('active',x.dataset.mood===mood));document.getElementById('moodTitle').textContent=mood;const other=document.getElementById('photoMoodPage');if(other)other.textContent=mood;document.getElementById('screensaverMood').textContent=mood;document.documentElement.style.setProperty('--ambient-image',moodImages[mood]||moodImages['Família']);document.body.classList.toggle('guest-mode',mood==='Visitas');}
 document.querySelectorAll('[data-mood]').forEach(b=>b.addEventListener('click',()=>setMood(b.dataset.mood)));
+document.querySelectorAll('.app.spotify').forEach(b=>b.addEventListener('click',()=>{if(document.body.classList.contains('guest-mode')){const p=document.createElement('p');p.className='demo-hint';p.textContent='Prévia: o Spotify fica em destaque no modo Visitas. A reprodução no Google Nest/TV precisa de integração real com Spotify Connect ou Cast.';b.closest('.apps-row').after(p)}}));
 document.getElementById('exitScreensaver').addEventListener('click',()=>setPage('home'));
 
 function getNotes(){const existing=document.querySelectorAll('#homeNotes .note-item');return Array.from(existing).map(x=>x.querySelector('div').childNodes[0].textContent.trim())}
