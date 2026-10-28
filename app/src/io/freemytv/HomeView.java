@@ -613,7 +613,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         measure(tiles, width, Math.round(270 * kk));
         measure(drawerLayer, width, Math.round(600 * kk));
         measure(sheetLayer, width, height);
-        measure(toastLayer, Math.round(1000 * kk), Math.round(220 * kk));
+        // The topmost toast layer also carries the 5% grain overlay, so it must span the whole screen.
+        measure(toastLayer, width, height);
         setMeasuredDimension(width, height);
     }
 
@@ -633,7 +634,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         sheetLayer.layout(0, 0, width, height);
         sheetLayer.setPivotX(width / 2f);
         sheetLayer.setPivotY(height / 2f);
-        place(toastLayer, (width - toastLayer.getMeasuredWidth()) / 2, 0);
+        // Keep toast drawing in full-screen coordinates; transparent pixels leave the layers beneath visible.
+        toastLayer.layout(0, 0, width, height);
     }
 
     private static void place(View v, int x, int y) {
