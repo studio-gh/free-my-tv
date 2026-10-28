@@ -22,7 +22,14 @@ final class CalendarAgenda {
     private static final String FEED = "https://painel-casa.pages.dev/api/tv/agenda";
     private CalendarAgenda() {}
 
-    static List<String> fetch() {
+    /** Result distinguishes a valid empty calendar from a failed request, so callers can keep last good data only on failure. */
+    static final class Result {
+        final boolean success;
+        final List<String> lines;
+        Result(boolean success, List<String> lines) { this.success = success; this.lines = lines; }
+    }
+
+    static Result fetch() {
         List<String> lines = new ArrayList<>();
         HttpURLConnection connection = null;
         try {
@@ -34,7 +41,7 @@ final class CalendarAgenda {
             connection.setRequestProperty("Accept", "application/json");
             connection.setRequestProperty("Cache-Control", "no-cache");
             int status = connection.getResponseCode();
-            if (status != HttpURLConnection.HTTP_OK) return lines;
+            if (status != HttpURLConnection.HTTP_OK) return new Result(false, lines);
 
             try (InputStream in = connection.getInputStream();
                  BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
@@ -43,9 +50,10 @@ final class CalendarAgenda {
                 while ((part = reader.readLine()) != null) body.append(part);
                 JSONObject root = new JSONObject(body.toString());
                 JSONArray events = root.optJSONArray("events");
-                if (events == null || events.length() == 0) {
+                if (events == null) return new Result(false, lines);
+                if (events.length() == 0) {
                     lines.add("Nenhum compromisso próximo");
-                    return lines;
+                    return new Result(true, lines);
                 }
 
                 SimpleDateFormat dateKey = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -86,11 +94,12 @@ final class CalendarAgenda {
                     if (!title.isEmpty()) lines.add(when + "   " + title);
                 }
             }
+            return new Result(true, lines);
         } catch (Exception ignored) {
             // Keep the launcher usable when the network or agenda service is unavailable.
+            return new Result(false, lines);
         } finally {
             if (connection != null) connection.disconnect();
         }
-        return lines;
     }
 }
