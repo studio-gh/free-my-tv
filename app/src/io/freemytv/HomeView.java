@@ -52,10 +52,10 @@ import java.util.function.Consumer;
  *  - three cards with the titles recommended for right now in the selected tab (Recs, from TMDB); the background is
  *    the first card's photo, heavily blurred and almost white (Backdrop); without picks, one of your own photos
  *    (Photos) the same way, or else a light gradient;
- *  - at the bottom, the glass shelf with the apps (icons in each brand's color, like the tvOS Dock; the focused one
- *    grows);
+ *  - without recommendations, the clock and weather are on the left and the shared family agenda is a glass card on the right;
+ *  - at the bottom, the glass shelf with the apps (icons in each brand's color, like the tvOS Dock; the focused one grows);
  *  - ↓ on the shelf: everything moves up and the bottom drawer appears (inputs, shortcuts, weather for the next hours or days
- *    and quotes with the 24 h change); the background lightens (darkens at night). ↑ or Back closes it;
+ *    and the shared family agenda); the background lightens (darkens at night). ↑ or Back closes it;
  *  - from sunset to sunrise, a night look: dark background, smoked glass and white text.
  * Measurements are in a 1920×1080 space (k = width / 1920). The screen is split into layers so the TV's weak GPU only
  * redraws what changed.
@@ -273,7 +273,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private final Paint veil = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint tileFill = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final RectF tmp = new RectF(), cell = new RectF(), screen = new RectF();
+    private final RectF tmp = new RectF(), cell = new RectF(), screen = new RectF(), homeAgendaRect = new RectF();
     private final TextPaint fitPaint = new TextPaint();
     private final RectF gridCell = new RectF();
     private LinearGradient[] tileShaders = new LinearGradient[0];
@@ -291,6 +291,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private String weatherTitle, nowTemp, highLow, sunriseText, sunsetText, staleText;
     private final String[] hourText = new String[6], hourTempText = new String[6];
     private final String[] dayText = new String[5], dayMaxText = new String[5], dayMinText = new String[5];
+    private volatile List<String> agendaLines = new ArrayList<>();
+    private long agendaRequestedAt;
+    private final Paint agendaLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final TextPaint agendaTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     private boolean textDays;   // the weather card shows the next days (Home Settings → Forecast) and has them
     private final String[] priceText = new String[HomeData.COINS.length], changeText = new String[HomeData.COINS.length];
 
@@ -362,6 +366,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             playing.start();   // the listener allowed after the screen showed (a no-op once watching)
             data.refreshIfStale();
             recs.refreshIfStale();
+            refreshAgenda(false);
             checkNotices();
             updatePalette();
             checkNight(true);
@@ -447,6 +452,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         recs.addListener(this);
         data.refreshIfStale();
         recs.refreshIfStale();
+        refreshAgenda(true);
         Photos.importInbox(getContext(), ownReady);   // photos a computer just sent
         if (tvInputs != null) tvInputs.registerCallback(inputCallback, handler);
         handler.postDelayed(tick, 15_000);
@@ -604,6 +610,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         h = height;
         k = w / 1920f;
         screen.set(0, 0, w, h);
+        homeAgendaRect.set(980 * k, 275 * k, (CONTENT_R - 80) * k, 680 * k);
+        snap(homeAgendaRect);
         scene.setSize(w, h);
         makePaints();
         gridLabels = null;
@@ -647,6 +655,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         lClock.setLetterSpacing(-0.01f);
         lWeather = Ui.text(Ui.medium, 34 * k, L_DIM);
         lClockQuote = Ui.numbers(Ui.medium, 28 * k, L_DIM);
+        agendaLabelPaint.setTypeface(Ui.semibold);
+        agendaLabelPaint.setTextSize(20 * k);
+        agendaTextPaint.setTypeface(Ui.medium);
+        agendaTextPaint.setTextSize(26 * k);
         lightGradient = null;
         buttonPaint = Ui.text(Ui.semibold, 29 * k, INK);
         capsuleText = Ui.numbers(Ui.medium, 29 * k, 0xF2FFFFFF);
@@ -1665,7 +1677,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             x += tw + gap;
         }
         float cardsTop = CARDS_TOP * k, split = left + (right - left) * 0.585f;
-        boolean wx = Prefs.weather(), qt = Prefs.quotes() && HomeData.active().length > 0;
+        boolean wx = Prefs.weather(), qt = true; // The second card is the shared family agenda.
         // A card that is off gives its room to the other one.
         weatherCard.set(left, cardsTop, qt ? split - 16 * k : right, cardsTop + CARDS_H * k);
         quotesCard.set(wx ? split + 16 * k : left, cardsTop, right, cardsTop + CARDS_H * k);
@@ -1743,7 +1755,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = 0; i < drawerItems.size(); i++) if (i != top) drawDrawerTile(c, i);
         if (top >= 0) drawDrawerTile(c, top);
         if (Prefs.weather()) drawWeatherCard(c, weatherCard);
-        if (Prefs.quotes() && HomeData.active().length > 0) drawQuotesCard(c, quotesCard);
+        drawAgendaWidget(c, quotesCard);
     }
 
     /** Square drawer button: symbol and name; an input with no device is dimmed. Focused: white, with dark text. */
@@ -1783,6 +1795,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** Weather for your location: now (large), the next 6 hours or 5 days, and sunrise and sunset. */
     private void drawWeatherCard(Canvas c, RectF r) {
         drawerCard(c, r);
+        if (zone == WIDGETS && widgetIndex == 0) {
+            fill.setShader(null);
+            fill.setStyle(Paint.Style.STROKE);
+            fill.setStrokeWidth(3 * k);
+            fill.setColor(tone(0xFF77777C, 0xFFF5F5F7));
+            c.drawRoundRect(r, 30 * k, 30 * k, fill);
+            fill.setStyle(Paint.Style.FILL);
+        }
         if (Ui.LEGACY) weatherSnapshot.draw(c, r, drawerCardsKey(), cc -> drawWeather(cc, r));
         else drawWeather(c, r);
     }
@@ -1874,6 +1894,73 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         Symbols.draw(getContext(), c, symbol, x + sw / 2, base - Ui.halfCap(cardDim), size, tone(L_DIM, 0xB3FFFFFF));
         c.drawText(label, x + sw + 10 * k, base, cardDim);
         return x + sw + 10 * k + cardDim.measureText(label);
+    }
+
+    /** Read-only family calendar widget, shown beside the weather in the bottom drawer. */
+    private void drawAgendaWidget(Canvas c, RectF r) {
+        drawerCard(c, r);
+        if (zone == WIDGETS && widgetIndex == 1) {
+            fill.setShader(null);
+            fill.setStyle(Paint.Style.STROKE);
+            fill.setStrokeWidth(3 * k);
+            fill.setColor(tone(0xFF77777C, 0xFFF5F5F7));
+            c.drawRoundRect(r, 30 * k, 30 * k, fill);
+            fill.setStyle(Paint.Style.FILL);
+        }
+        float x = r.left + 30 * k;
+        cardTitle.setColor(tone(L_DIM, 0xB3FFFFFF));
+        cardDim.setColor(tone(L_DIM, 0xADFFFFFF));
+        agendaTextPaint.setTextSize(24 * k);
+        agendaTextPaint.setColor(drawerInk(0.95f));
+        c.drawText("Agenda · Guiga e Rê", x, r.top + 54 * k, cardTitle);
+        List<String> events = agendaLines;
+        float maxWidth = r.width() - 60 * k;
+        if (events.isEmpty()) {
+            c.drawText("Agenda indisponível", x, r.top + 118 * k, agendaTextPaint);
+            c.drawText("Verifique a conexão", x, r.top + 160 * k, cardDim);
+            return;
+        }
+        for (int i = 0; i < events.size() && i < 3; i++) {
+            String line = TextUtils.ellipsize(events.get(i), agendaTextPaint, maxWidth, TextUtils.TruncateAt.END).toString();
+            c.drawText(line, x, r.top + (112 + i * 54) * k, agendaTextPaint);
+        }
+        if (events.size() > 3) {
+            c.drawText("+" + (events.size() - 3) + " compromissos", x, r.bottom - 24 * k, cardDim);
+        }
+    }
+
+    /** Visible home-screen agenda card; the drawer version remains available for remote navigation. */
+    private void drawHomeAgendaWidget(Canvas c) {
+        RectF r = homeAgendaRect;
+        drawerCard(c, r);
+        cardTitle.setColor(tone(L_DIM, 0xB3FFFFFF));
+        cardDim.setColor(tone(L_DIM, 0xADFFFFFF));
+        agendaTextPaint.setTextSize(25 * k);
+        agendaTextPaint.setColor(drawerInk(0.95f));
+        float x = r.left + 30 * k;
+        float maxWidth = r.width() - 60 * k;
+        c.drawText("Agenda · Guiga e Rê", x, r.top + 56 * k, cardTitle);
+        List<String> events = agendaLines;
+        if (events.isEmpty()) {
+            c.drawText("Agenda indisponível", x, r.top + 132 * k, agendaTextPaint);
+            c.drawText("Verifique a conexão", x, r.top + 184 * k, cardDim);
+            return;
+        }
+        for (int i = 0; i < events.size() && i < 4; i++) {
+            String line = TextUtils.ellipsize(events.get(i), agendaTextPaint, maxWidth, TextUtils.TruncateAt.END).toString();
+            c.drawText(line, x, r.top + (126 + i * 58) * k, agendaTextPaint);
+        }
+        if (events.size() > 4) {
+            c.drawText("+" + (events.size() - 4) + " compromissos", x, r.bottom - 26 * k, cardDim);
+        }
+    }
+
+    private String agendaText() {
+        StringBuilder text = new StringBuilder("Agenda Guiga e Rê");
+        List<String> events = agendaLines;
+        if (events.isEmpty()) return text.append(". Agenda indisponível no momento.").toString();
+        for (int i = 0; i < events.size() && i < 6; i++) text.append(". ").append(events.get(i));
+        return text.toString();
     }
 
     /** Prices in the configured currency with the 24 h change (green/red, like Apple's Stocks app). */
@@ -2385,6 +2472,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                     zone = Z_DRAWER;
                 } else if (dx != 0 && at + dx >= 0 && at + dx < on.size()) {
                     widgetIndex = on.get(at + dx);
+                    drawerDirty = true;
                 } else {
                     return;
                 }
@@ -2397,8 +2485,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                     drawerIndex = next;
                 } else if (dy < 0) {
                     closeDrawer();
-                } else if (talkBack() && !widgets().isEmpty()) {
-                    // Only with TalkBack: the widgets are there to be read, and this is how it gets to them.
+                } else if (!widgets().isEmpty()) {
+                    // Widgets are part of the remote's normal navigation, not TalkBack-only.
                     zone = WIDGETS;
                     widgetIndex = widgets().get(0);
                 } else {
@@ -2763,7 +2851,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = shelfFirst; i < Math.min(shelf.size(), shelfFirst + shelfVisible); i++) out.add(a11yId(Z_SHELF, i));
         for (int i = 0; i < drawerItems.size(); i++) out.add(a11yId(Z_DRAWER, i));
         if (drawerOpen && Prefs.weather()) out.add(a11yId(WIDGETS, 0));
-        if (drawerOpen && Prefs.quotes() && HomeData.active().length > 0) out.add(a11yId(WIDGETS, 1));
+        if (drawerOpen) out.add(a11yId(WIDGETS, 1));
     }
 
     private String a11yText(int id) {
@@ -2783,7 +2871,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 }
                 return label(shelf, i);
             case Z_DRAWER: return label(drawerItems, i);
-            case WIDGETS: return i == 0 ? weatherText() : quotesText();
+            case WIDGETS: return i == 0 ? weatherText() : agendaText();
             default: return "";
         }
     }
@@ -2858,7 +2946,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         List<Integer> out = new ArrayList<>();
         if (!drawerOpen) return out;
         if (Prefs.weather()) out.add(0);
-        if (Prefs.quotes() && HomeData.active().length > 0) out.add(1);
+        out.add(1);
         return out;
     }
 
@@ -3095,6 +3183,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         applyTone();
         if (!picksOn()) {
             drawClock(c);
+            if (!drawerOpen) drawHomeAgendaWidget(c);
             if (HomeData.coinCount() > 0 || playingTab != null) drawQuotes(c);
             return;
         }
@@ -3135,6 +3224,23 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private boolean picksOn() {
         return Recs.hasKey(getContext());
+    }
+
+    /** Loads only the public, title-and-time-only family calendar feed. */
+    private void refreshAgenda(boolean force) {
+        long now = SystemClock.elapsedRealtime();
+        if (!force && now - agendaRequestedAt < 5 * 60_000L) return;
+        agendaRequestedAt = now;
+        LOADER.execute(() -> {
+            List<String> next = CalendarAgenda.fetch();
+            handler.post(() -> {
+                if (!next.equals(agendaLines)) {
+                    agendaLines = next;
+                    heroDirty = true;
+                    wake();
+                }
+            });
+        });
     }
 
     private void drawClock(Canvas c) {
