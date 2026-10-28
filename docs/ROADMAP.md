@@ -2,6 +2,12 @@
 
 This file is the project backlog because GitHub Issues is disabled on this repository.
 
+## P0 · Performance contract
+
+- [ ] Meet the non-negotiable rules and on-device acceptance tests in `docs/PERFORMANCE_CONTRACT.md`.
+- [ ] Measure cold start, D-pad response and memory on the Philips TV before claiming the launcher is faster than stock.
+- [ ] Keep image, agenda and photo API work off the UI thread; launch from cache and refresh in the background.
+
 ## P0 · Calendar integration reliability
 
 - [ ] Review PR #1 and PR #2 together; avoid duplicate or contradictory commits.
