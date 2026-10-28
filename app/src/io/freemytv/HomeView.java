@@ -84,8 +84,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     // "All Apps" sheet.
     private static final int COLUMNS = 5, VISIBLE_ROWS = 3;
     private static final float GRID_W = 300, GRID_H = 169, GRID_GAP = 40, GRID_ROW = 239, GRID_TOP = 196, GRID_RADIUS = 22;
-    private static final int SMOKE = 0xFF111113, INK = 0xFF1C1C1E, WHITE = 0xFFF5F5F7;
+    private static final int SMOKE = 0xFF2C2C2C, INK = 0xFF2C2C2C, WHITE = 0xFFFFFCF4;
     private static final int UP_COLOR = 0xFF30D158, DOWN_COLOR = 0xFFFF453A;
+    private static final int STUDIO_ACCENT = 0xFFFF961A;
     private static final long TOAST_MS = 6000, FADE_MS = 800;
     /** Blur radii of the shadow and shadowDeep paints (Shadows needs them to draw the same blur on older TVs). */
     private static final float SHADOW_BLUR = 26, DEEP_BLUR = 30;
@@ -101,7 +102,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private static final float L_TALL_W = 320, L_CARD_GAP = 40, L_BUTTON = 68, L_BUTTON_GAP = 20, L_BUTTON_CY = 103;
     private static final float L_PLATTER_TOP = 814, L_TILE_H = 126;
     private static final float L_DATE_BASE = 330, L_CLOCK_BASE = 540, L_WEATHER_BASE = 626, L_QUOTES_BASE = 694;
-    private static final int L_INK = 0xFF1D1D1F, L_DIM = 0xFF6E6E73, L_FAINT = 0xFF8E8E93;
+    private static final int L_INK = 0xFFFFFCF4, L_DIM = 0xFFCBC7BE, L_FAINT = 0xFF9D988F;
     private static String[] tabs;
     private static int tabsGeneration = -1;
     private static final String[] TAB_KIND = {null, "movie", "tv"};
@@ -973,7 +974,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             nightPair = false;
             return;
         }
-        int color = blend(0xFFEBEBF0, 0xFF141416, night);
+        int color = 0xFF2C2C2C;
         java.util.Arrays.fill(neutralFrostPx, color);
         java.util.Arrays.fill(neutralGlassPx, color);
         scene.setFrost(neutralFrostPx);
