@@ -291,6 +291,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private String weatherTitle, nowTemp, highLow, sunriseText, sunsetText, staleText;
     private final String[] hourText = new String[6], hourTempText = new String[6];
     private final String[] dayText = new String[5], dayMaxText = new String[5], dayMinText = new String[5];
+    private volatile List<String> agendaLines = new ArrayList<>();
+    private long agendaRequestedAt;
+    private final Paint agendaLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint agendaTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private boolean textDays;   // the weather card shows the next days (Home Settings → Forecast) and has them
     private final String[] priceText = new String[HomeData.COINS.length], changeText = new String[HomeData.COINS.length];
 
@@ -362,6 +366,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             playing.start();   // the listener allowed after the screen showed (a no-op once watching)
             data.refreshIfStale();
             recs.refreshIfStale();
+            refreshAgenda(false);
             checkNotices();
             updatePalette();
             checkNight(true);
@@ -447,6 +452,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         recs.addListener(this);
         data.refreshIfStale();
         recs.refreshIfStale();
+        refreshAgenda(true);
         Photos.importInbox(getContext(), ownReady);   // photos a computer just sent
         if (tvInputs != null) tvInputs.registerCallback(inputCallback, handler);
         handler.postDelayed(tick, 15_000);
@@ -647,6 +653,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         lClock.setLetterSpacing(-0.01f);
         lWeather = Ui.text(Ui.medium, 34 * k, L_DIM);
         lClockQuote = Ui.numbers(Ui.medium, 28 * k, L_DIM);
+        agendaLabelPaint.setTypeface(Ui.semibold);
+        agendaLabelPaint.setTextSize(20 * k);
+        agendaTextPaint.setTypeface(Ui.medium);
+        agendaTextPaint.setTextSize(26 * k);
         lightGradient = null;
         buttonPaint = Ui.text(Ui.semibold, 29 * k, INK);
         capsuleText = Ui.numbers(Ui.medium, 29 * k, 0xF2FFFFFF);
@@ -3093,6 +3103,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void drawLightTop(Canvas c) {
         applyTone();
+        drawAgenda(c);
         if (!picksOn()) {
             drawClock(c);
             if (HomeData.coinCount() > 0 || playingTab != null) drawQuotes(c);
@@ -3135,6 +3146,40 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private boolean picksOn() {
         return Recs.hasKey(getContext());
+    }
+
+    /** Loads only the public, title-and-time-only family calendar feed. */
+    private void refreshAgenda(boolean force) {
+        long now = SystemClock.elapsedRealtime();
+        if (!force && now - agendaRequestedAt < 5 * 60_000L) return;
+        agendaRequestedAt = now;
+        LOADER.execute(() -> {
+            List<String> next = CalendarAgenda.fetch();
+            handler.post(() -> {
+                if (!next.equals(agendaLines)) {
+                    agendaLines = next;
+                    heroDirty = true;
+                    wake();
+                }
+            });
+        });
+    }
+
+    /** A compact native calendar strip, placed between the recommendations and the app shelf. */
+    private void drawAgenda(Canvas c) {
+        float x = MARGIN * k;
+        float labelY = 735 * k;
+        agendaLabelPaint.setColor(tone(L_DIM, 0xFFB8B8BE));
+        agendaTextPaint.setColor(tone(L_INK, 0xFFF4F4F5));
+        c.drawText(Ui.tr("UP NEXT · GUIGA E RÊ"), x, labelY, agendaLabelPaint);
+        List<String> lines = agendaLines;
+        if (lines.isEmpty()) {
+            c.drawText(Ui.tr("Shared calendar is loading"), x, 772 * k, agendaTextPaint);
+            return;
+        }
+        for (int i = 0; i < Math.min(2, lines.size()); i++) {
+            c.drawText(lines.get(i), x, (772 + i * 34) * k, agendaTextPaint);
+        }
     }
 
     private void drawClock(Canvas c) {
