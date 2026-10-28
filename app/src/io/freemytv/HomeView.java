@@ -93,6 +93,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private static final int SKY = 0, HERO = 1, STATUS = 2, PLATTER = 3, TILES = 4, DRAWER = 5, SHEET = 6, TOAST = 7;
     private static final int Z_STATUS = 0, Z_HERO = 1, Z_SHELF = 2, Z_DRAWER = 3;
     private static final ExecutorService LOADER = Executors.newSingleThreadExecutor();
+    // One subtle grain pass at the top of the layer stack, so it textures the interface without per-card work.
+    private Bitmap grainBitmap;
+    private BitmapShader grainShader;
+    private Paint grainPaint;
+
     // Light design (the L_ constants): title, tab bar, three recommendation cards and the shelf.
     // The tab bar is a 68 px capsule; the cards sit on the 5-column grid (the wide one spans 3).
     private static final float L_TITLE_BASE = 130, L_TABBAR_TOP = 158, L_TABBAR_H = 68, L_CARDS_TOP = 262, L_CARD_H = 442;
@@ -343,8 +348,32 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 case SHEET: drawSheet(c); break;
                 default: drawToast(c); break;
             }
+            if (kind == TOAST) drawGrain(c);
             scene.setOffset(0, 0);
         }
+    }
+
+    /** Low-cost, tileable texture at about 5% opacity, painted once above the whole interface. */
+    private void drawGrain(Canvas c) {
+        if (grainPaint == null) {
+            int size = 64;
+            grainBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            int[] pixels = new int[size * size];
+            int state = 0x4B1D2C3A;
+            for (int i = 0; i < pixels.length; i++) {
+                state = state * 1664525 + 1013904223;
+                int gray = (state >>> 24) & 0xFF;
+                pixels[i] = 0xFF000000 | (gray << 16) | (gray << 8) | gray;
+            }
+            grainBitmap.setPixels(pixels, 0, size, 0, 0, size, size);
+            grainShader = new BitmapShader(grainBitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+            grainPaint = new Paint();
+            grainPaint.setShader(grainShader);
+            grainPaint.setAlpha(13); // 13/255 ≈ 5.1%
+            grainPaint.setFilterBitmap(false);
+            grainPaint.setAntiAlias(false);
+        }
+        c.drawRect(0, 0, 1920 * k, 1080 * k, grainPaint);
     }
 
     private final Runnable reloadSoon = this::reload;
