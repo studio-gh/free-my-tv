@@ -1915,7 +1915,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         float maxWidth = r.width() - 60 * k;
         for (int i = 0; i < events.size() && i < 3; i++) {
-            String line = TextUtils.ellipsize(events.get(i), cardText, maxWidth, TextUtils.TruncateAt.END).toString();
+            String line = TextUtils.ellipsize(events.get(i), agendaTextPaint, maxWidth, TextUtils.TruncateAt.END).toString();
             c.drawText(line, x, r.top + (112 + i * 54) * k, cardText);
         }
         if (events.size() > 3) {
