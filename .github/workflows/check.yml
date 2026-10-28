@@ -39,7 +39,7 @@ jobs:
       - name: Upload Google TV APK
         uses: actions/upload-artifact@v4
         with:
-          name: FreeMyTV-Painel-Casa-TEST-APK
+          name: TV-Studio-Test-APK
           path: FreeMyTV.apk
           if-no-files-found: error
           retention-days: 14
