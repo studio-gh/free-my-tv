@@ -3458,6 +3458,15 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private boolean moveLight(int dx, int dy) {
+        // Up from entertainment returns to the photo ambience without waiting for content or network.
+        if (!photoSectionVisible && zone == Z_TOP && dy < 0) {
+            photoSectionVisible = true;
+            zone = Z_PHOTOS;
+            heroDirty = true;
+            retarget(false);
+            click.move();
+            return true;
+        }
         if (photoSectionVisible && zone == Z_PHOTOS) {
             if (dy > 0) {
                 photoSectionVisible = false;
