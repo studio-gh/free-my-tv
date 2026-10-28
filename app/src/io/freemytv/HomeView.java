@@ -3280,95 +3280,98 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
      * Ambient-first home. The selected home photo is drawn by SKY behind every transparent UI layer.
      * Photo albums are imported locally; this screen does not claim a live Google Photos connection.
      */
+    /** Photo-first Home with a full-screen ambient image and translucent family widgets. */
     private void drawPhotoHome(Canvas c) {
         applyTone();
         float x = MARGIN * k;
-        // A soft top-to-bottom veil plus edge vignette. It is deliberately subtle so the photo remains visible.
+
+        // Keep the photo as the full canvas backdrop. Add a gentle vertical gradient and edge vignette for contrast.
         fill.setShader(new LinearGradient(0, 0, 0, h,
-                new int[] {0xB81A1A1A, 0x401A1A1A, 0x201A1A1A, 0x8A1A1A1A},
-                new float[] {0f, 0.22f, 0.60f, 1f}, Shader.TileMode.CLAMP));
+                new int[] {0xB82C2C2C, 0x482C2C2C, 0x202C2C2C, 0x8A2C2C2C},
+                new float[] {0f, 0.20f, 0.62f, 1f}, Shader.TileMode.CLAMP));
         c.drawRect(screen, fill);
         fill.setShader(null);
-        fill.setColor(0x33121212);
-        c.drawRect(0, 0, 0.20f * w, h, fill);
-        c.drawRect(0.80f * w, 0, w, h, fill);
+        fill.setColor(0x38141414);
+        c.drawRect(0, 0, 0.16f * w, h, fill);
+        c.drawRect(0.84f * w, 0, w, h, fill);
 
-        // Home heading and weather: large on the left, directly over the photo.
+        // Greeting and weather block, inspired by the approved cinematic mockup.
         lDate.setColor(0xD9FFFCF4);
         lTitle.setColor(0xFFFFFCF4);
         lCardTitle.setColor(0xFFFFFCF4);
         lCardMeta.setColor(0xD9FFFCF4);
         c.drawText(dateText.toUpperCase(java.util.Locale.ROOT),
-                x - Ui.leftBearing(lDate, dateText), 160 * k, lDate);
+                x - Ui.leftBearing(lDate, dateText), 150 * k, lDate);
         String hello = "Bom dia.";
-        c.drawText(hello, x - Ui.leftBearing(lTitle, hello), 246 * k, lTitle);
+        c.drawText(hello, x - Ui.leftBearing(lTitle, hello), 244 * k, lTitle);
+
         HomeData.Weather wx = data.weather;
         String condition = Prefs.weather() && !Double.isNaN(wx.temp)
                 ? HomeData.degrees(wx.temp) + "  " + HomeData.condition(wx.code, wx.isDay)
                 : "Seu espaço compartilhado";
-        c.drawText(condition, x, 312 * k, lCardTitle);
+        c.drawText(condition, x, 316 * k, lCardTitle);
         if (Prefs.weather() && !Double.isNaN(wx.temp)) {
-            c.drawText(HomeData.highLow(wx, "  "), x, 350 * k, lCardMeta);
+            c.drawText(HomeData.highLow(wx, "  "), x, 354 * k, lCardMeta);
         }
 
         String[] moods = {"Família", "Visitas", "Viagem", "Arte"};
-        String[] icons = {"family_restroom", "groups", "flight", "image"};
-        float mw = 158 * k, mh = 140 * k, gap = 18 * k;
-        float left = x, top = 398 * k;
+        float mw = 150 * k, mh = 130 * k, gap = 18 * k, top = 408 * k;
         for (int i = 0; i < moods.length; i++) {
-            RectF r = new RectF(left + i * (mw + gap), top,
-                    left + i * (mw + gap) + mw, top + mh);
+            RectF r = new RectF(x + i * (mw + gap), top, x + i * (mw + gap) + mw, top + mh);
             boolean focused = i == photoMoodIndex && zone == Z_PHOTOS;
             fill.setShader(null);
-            fill.setColor(focused ? 0xCC2C2C2C : 0xA82C2C2C);
+            fill.setColor(focused ? 0xC82C2C2C : 0xA82C2C2C);
             c.drawRoundRect(r, 20 * k, 20 * k, fill);
             fill.setStyle(Paint.Style.STROKE);
             fill.setStrokeWidth((focused ? 3 : 1) * k);
             fill.setColor(focused ? STUDIO_ACCENT : 0x66FFFCF4);
             c.drawRoundRect(r, 20 * k, 20 * k, fill);
             fill.setStyle(Paint.Style.FILL);
-            String symbol = i == 0 ? "family_restroom" : i == 1 ? "groups" : i == 2 ? "flight" : "image";
-            Symbols.draw(getContext(), c, symbol, r.centerX(), r.top + 48 * k, 50 * k,
+
+            // Use icon assets known to ship in the current APK; new symbols must be added to the catalogue before use.
+            String symbol = i == 0 ? "home" : i == 1 ? "apps" : i == 2 ? "cast" : "tv";
+            Symbols.draw(getContext(), c, symbol, r.centerX(), r.top + 43 * k, 48 * k,
                     focused ? STUDIO_ACCENT : 0xFFFFFCF4);
             Paint name = focused ? lTabOn : lCardMeta;
             name.setColor(focused ? STUDIO_ACCENT : 0xFFFFFCF4);
-            name.setTextSize(25 * k);
+            name.setTextSize(24 * k);
             name.setTextAlign(Paint.Align.CENTER);
-            c.drawText(moods[i], r.centerX(), r.bottom - 20 * k, name);
+            c.drawText(moods[i], r.centerX(), r.bottom - 18 * k, name);
             name.setTextAlign(Paint.Align.LEFT);
         }
 
-        // Translucent agenda preview on the right, with real loaded events where available.
-        RectF agenda = new RectF(980 * k, 178 * k, (CONTENT_R - 60) * k, 425 * k);
+        // Translucent agenda card on the right.
+        RectF agenda = new RectF(980 * k, 178 * k, (CONTENT_R - 70) * k, 430 * k);
         drawerCard(c, agenda);
         cardTitle.setColor(0xFFFFFCF4);
         cardDim.setColor(0xD9FFFCF4);
-        agendaTextPaint.setTextSize(25 * k);
+        agendaTextPaint.setTextSize(24 * k);
         agendaTextPaint.setColor(0xFFFFFCF4);
-        c.drawText("Agenda · Guiga e Rê", agenda.left + 28 * k, agenda.top + 48 * k, cardTitle);
+        c.drawText("Agenda · Guiga e Rê", agenda.left + 26 * k, agenda.top + 46 * k, cardTitle);
         List<String> events = agendaLines;
         if (events.isEmpty()) {
-            c.drawText("Agenda indisponível", agenda.left + 28 * k, agenda.top + 105 * k, agendaTextPaint);
+            c.drawText("Agenda indisponível", agenda.left + 26 * k, agenda.top + 102 * k, agendaTextPaint);
         } else {
             for (int i = 0; i < events.size() && i < 4; i++) {
-                String line = TextUtils.ellipsize(events.get(i), agendaTextPaint, agenda.width() - 56 * k,
+                String line = TextUtils.ellipsize(events.get(i), agendaTextPaint, agenda.width() - 50 * k,
                         TextUtils.TruncateAt.END).toString();
-                c.drawCircle(agenda.left + 31 * k, agenda.top + (91 + i * 49) * k, 4 * k, fill);
-                c.drawText(line, agenda.left + 48 * k, agenda.top + (99 + i * 49) * k, agendaTextPaint);
+                fill.setColor(STUDIO_ACCENT);
+                c.drawCircle(agenda.left + 29 * k, agenda.top + (86 + i * 48) * k, 4 * k, fill);
+                c.drawText(line, agenda.left + 45 * k, agenda.top + (94 + i * 48) * k, agendaTextPaint);
             }
         }
 
-        // Family notes card is visible at Home level and is a shortcut to the existing notes surface if configured.
-        RectF notes = new RectF(1300 * k, 448 * k, (CONTENT_R - 60) * k, 700 * k);
+        // Notes preview sits alongside the calendar; detailed notes remain in the existing drawer flow.
+        RectF notes = new RectF(1320 * k, 450 * k, (CONTENT_R - 70) * k, 690 * k);
         drawerCard(c, notes);
-        c.drawText("Recados", notes.left + 25 * k, notes.top + 44 * k, cardTitle);
-        c.drawText("Os recados aparecem no painel da casa", notes.left + 25 * k, notes.top + 90 * k, cardDim);
+        c.drawText("Recados", notes.left + 24 * k, notes.top + 42 * k, cardTitle);
+        c.drawText("Recados da casa", notes.left + 24 * k, notes.top + 86 * k, cardDim);
+        c.drawText("Abra o painel para consultar", notes.left + 24 * k, notes.top + 122 * k, cardDim);
 
-        // Small agenda/feature links stay above the entertainment fold.
         cardTitle.setColor(0xFFFFFCF4);
-        c.drawText("↓  Filmes e séries", x, 638 * k, cardTitle);
+        c.drawText("↓  Filmes e séries", x, 644 * k, cardTitle);
         lCardMeta.setColor(0xD9FFFCF4);
-        c.drawText("Use o controle remoto para continuar", x, 674 * k, lCardMeta);
+        c.drawText("Use o controle remoto para continuar", x, 680 * k, lCardMeta);
         lCardTitle.setColor(tone(L_INK, WHITE));
         lCardMeta.setColor(tone(L_DIM, 0xFF98989D));
     }
