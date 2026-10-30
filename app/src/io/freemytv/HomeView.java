@@ -3298,32 +3298,31 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         brand.setShadowLayer(10 * k, 0, 1 * k, 0x66000000);
         c.drawText("⚡ TV Studio", 62 * k, y + Ui.halfCap(brand), brand);
 
-        String[] items = {"Início", "Fotos & Ambientes", "Calendário", "Recados", "Clima",
-                "Filmes & Séries", "Apps", "Configurações", "Descanso"};
+        // Only expose destinations backed by working native behavior in this build.
+        String[] items = {"Início", "Apps", "Configurações"};
         float textSize = 22 * k;
         Paint nav = Ui.text(Ui.medium, textSize, 0xFFE7E3DA);
         Paint selected = Ui.text(Ui.semibold, textSize, 0xFF2C2C2C);
         float cursor = 410 * k;
-        float centerY = y;
+        int[] destinations = {0, 6, 7};
         for (int i = 0; i < items.length; i++) {
             float textWidth = nav.measureText(items[i]);
             float padX = 15 * k;
             float pillH = 48 * k;
-            if (i == photoNavIndex && (photoNavFocused || i == 1)) {
-                RectF pill = new RectF(cursor - padX, centerY - pillH / 2,
-                        cursor + textWidth + padX, centerY + pillH / 2);
+            boolean active = photoNavFocused && photoNavIndex == destinations[i];
+            if (active) {
+                RectF pill = new RectF(cursor - padX, y - pillH / 2,
+                        cursor + textWidth + padX, y + pillH / 2);
                 fill.setShader(null);
                 fill.setStyle(Paint.Style.FILL);
-                fill.setColor(photoNavFocused ? 0xFFFFFCF4 : STUDIO_ACCENT);
+                fill.setColor(0xFFFFFCF4);
                 c.drawRoundRect(pill, 24 * k, 24 * k, fill);
-                selected.setColor(photoNavFocused ? 0xFF2C2C2C : 0xFF2C2C2C);
-                c.drawText(items[i], cursor, centerY + Ui.halfCap(selected), selected);
+                c.drawText(items[i], cursor, y + Ui.halfCap(selected), selected);
             } else {
-                c.drawText(items[i], cursor, centerY + Ui.halfCap(nav), nav);
+                c.drawText(items[i], cursor, y + Ui.halfCap(nav), nav);
             }
-            cursor += textWidth + 25 * k;
+            cursor += textWidth + 34 * k;
         }
-        // Fine divider before search/clock, echoing the approved desktop layout.
         fill.setColor(0x55FFFCF4);
         fill.setStrokeWidth(1 * k);
         c.drawLine((CONTENT_R - 220) * k, 40 * k, (CONTENT_R - 220) * k, 91 * k, fill);
@@ -3331,10 +3330,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private void activatePhotoNav() {
+        int destination = photoNavIndex;
         photoNavFocused = false;
-        switch (photoNavIndex) {
+        switch (destination) {
             case 0:
-            case 1:
                 photoSectionVisible = true;
                 zone = Z_PHOTOS;
                 heroDirty = true;
@@ -3348,7 +3347,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 HomeApps.open(activity, HomeApps.tvSettings(), this, w / 2, h / 2, 1, 1);
                 break;
             default:
-                showToast("Esta seção ainda está sendo implementada no TV Studio.");
+                photoNavIndex = 0;
+                photoSectionVisible = true;
+                zone = Z_PHOTOS;
+                heroDirty = true;
                 break;
         }
         retarget(false);
