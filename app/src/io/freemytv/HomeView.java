@@ -3434,8 +3434,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                     focused ? STUDIO_ACCENT : 0xFFFFFCF4);
         }
 
-        // Translucent agenda card on the right.
-        RectF agenda = new RectF(980 * k, 178 * k, (CONTENT_R - 70) * k, 430 * k);
+        // Family dashboard: a single agenda panel and the four compact ambience controls.
+        RectF agenda = new RectF(980 * k, 178 * k, (CONTENT_R - 70) * k, 690 * k);
         drawerCard(c, agenda);
         cardTitle.setColor(0xFFFFFCF4);
         cardDim.setColor(0xD9FFFCF4);
@@ -3455,7 +3455,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             }
         }
 
-        // Notes are not backed by a persistent notes service yet; do not present placeholder content as real recados.
+        // Notes/messages integration is not available in this build; no fake content is shown.
         cardTitle.setColor(0xFFFFFCF4);
         c.drawText("↓  Filmes e séries", x, 644 * k, cardTitle);
         lCardMeta.setColor(0xD9FFFCF4);
