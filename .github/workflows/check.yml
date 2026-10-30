@@ -38,7 +38,6 @@ jobs:
         env:
           TEST_KEYSTORE_BASE64: ${{ secrets.TV_STUDIO_TEST_KEYSTORE_BASE64 }}
           TEST_KEYSTORE_PASSWORD: ${{ secrets.TV_STUDIO_TEST_KEYSTORE_PASSWORD }}
-        if: env.TV_STUDIO_SIGNING_READY == 'true'
         run: |
           if [ -z "$TEST_KEYSTORE_BASE64" ] || [ -z "$TEST_KEYSTORE_PASSWORD" ]; then
             echo "::notice::Persistent test signing is not configured. APK generation will be skipped."
@@ -53,7 +52,7 @@ jobs:
 
       # Validate the launcher and also publish a generic APK for TV installation.
       - name: Build generic Google TV APK
-        if: env.TV_STUDIO_SIGNING_READY == 'true'
+        if: env.FREEMYTV_KEYSTORE != ''
         run: ./build.sh --generic --test-install
       - name: Upload Google TV APK
         if: env.FREEMYTV_KEYSTORE != ''
