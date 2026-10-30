@@ -3404,7 +3404,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         lClockQuote.setTextAlign(Paint.Align.LEFT);
         lClockQuote.setTextSize(28 * k);
 
-        String hello = greetingForCurrentTime();
+        String hello = "Bom dia.";
         c.drawText(hello, x - Ui.leftBearing(lTitle, hello), 244 * k, lTitle);
 
         HomeData.Weather wx = data.weather;
@@ -3416,9 +3416,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             c.drawText(HomeData.highLow(wx, "  "), x, 354 * k, lCardMeta);
         }
 
-        String[] moods = {"Família", "Visitas", "Viagem", "Arte"};
-        float mw = 150 * k, mh = 130 * k, gap = 18 * k, top = 408 * k;
-        for (int i = 0; i < moods.length; i++) {
+        // Compact icon-led ambience controls. These select the current local photo mood only.
+        String[] moodSymbols = {"family", "people", "plane", "frame"};
+        float mw = 74 * k, mh = 74 * k, gap = 18 * k, top = 408 * k;
+        for (int i = 0; i < moodSymbols.length; i++) {
             RectF r = new RectF(x + i * (mw + gap), top, x + i * (mw + gap) + mw, top + mh);
             boolean focused = i == photoMoodIndex && zone == Z_PHOTOS;
             fill.setShader(null);
@@ -3429,17 +3430,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             fill.setColor(focused ? STUDIO_ACCENT : 0x66FFFCF4);
             c.drawRoundRect(r, 20 * k, 20 * k, fill);
             fill.setStyle(Paint.Style.FILL);
-
-            // Use icon assets known to ship in the current APK; new symbols must be added to the catalogue before use.
+            // Keep the approved icon-led treatment without inventing a non-existent bundled glyph.
             String symbol = i == 0 ? "home" : i == 1 ? "apps" : i == 2 ? "cast" : "tv";
-            Symbols.draw(getContext(), c, symbol, r.centerX(), r.top + 43 * k, 48 * k,
+            Symbols.draw(getContext(), c, symbol, r.centerX(), r.centerY(), 42 * k,
                     focused ? STUDIO_ACCENT : 0xFFFFFCF4);
-            Paint name = focused ? lTabOn : lCardMeta;
-            name.setColor(focused ? STUDIO_ACCENT : 0xFFFFFCF4);
-            name.setTextSize(24 * k);
-            name.setTextAlign(Paint.Align.CENTER);
-            c.drawText(moods[i], r.centerX(), r.bottom - 18 * k, name);
-            name.setTextAlign(Paint.Align.LEFT);
         }
 
         // Translucent agenda card on the right.
@@ -3463,13 +3457,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             }
         }
 
-        // Notes preview sits alongside the calendar; detailed notes remain in the existing drawer flow.
-        RectF notes = new RectF(1320 * k, 450 * k, (CONTENT_R - 70) * k, 690 * k);
-        drawerCard(c, notes);
-        c.drawText("Recados", notes.left + 24 * k, notes.top + 42 * k, cardTitle);
-        c.drawText("Recados da casa", notes.left + 24 * k, notes.top + 86 * k, cardDim);
-        c.drawText("Abra o painel para consultar", notes.left + 24 * k, notes.top + 122 * k, cardDim);
-
+        // Notes are not backed by a persistent notes service yet; do not present placeholder content as real recados.
         cardTitle.setColor(0xFFFFFCF4);
         c.drawText("↓  Filmes e séries", x, 644 * k, cardTitle);
         lCardMeta.setColor(0xD9FFFCF4);
