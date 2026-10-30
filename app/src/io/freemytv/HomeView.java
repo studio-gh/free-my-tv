@@ -3416,10 +3416,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             c.drawText(HomeData.highLow(wx, "  "), x, 354 * k, lCardMeta);
         }
 
-        // Compact icon-led ambience controls. These select the current local photo mood only.
-        String[] moodSymbols = {"family", "people", "plane", "frame"};
+        // Compact remote-operated ambience selectors using only verified bundled symbols.
         float mw = 74 * k, mh = 74 * k, gap = 18 * k, top = 408 * k;
-        for (int i = 0; i < moodSymbols.length; i++) {
+        for (int i = 0; i < 4; i++) {
             RectF r = new RectF(x + i * (mw + gap), top, x + i * (mw + gap) + mw, top + mh);
             boolean focused = i == photoMoodIndex && zone == Z_PHOTOS;
             fill.setShader(null);
@@ -3430,7 +3429,6 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             fill.setColor(focused ? STUDIO_ACCENT : 0x66FFFCF4);
             c.drawRoundRect(r, 20 * k, 20 * k, fill);
             fill.setStyle(Paint.Style.FILL);
-            // Keep the approved icon-led treatment without inventing a non-existent bundled glyph.
             String symbol = i == 0 ? "home" : i == 1 ? "apps" : i == 2 ? "cast" : "tv";
             Symbols.draw(getContext(), c, symbol, r.centerX(), r.centerY(), 42 * k,
                     focused ? STUDIO_ACCENT : 0xFFFFFCF4);
