@@ -3658,7 +3658,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             } else if (dy < 0) {
                 return true;
             } else if (dx != 0) {
-                photoNavIndex = Math.max(0, Math.min(8, photoNavIndex + dx));
+                int[] available = {0, 6, 7};
+                int position = 0;
+                for (int i = 0; i < available.length; i++) if (available[i] == photoNavIndex) position = i;
+                int next = Math.max(0, Math.min(available.length - 1, position + dx));
+                photoNavIndex = available[next];
             } else {
                 return true;
             }
