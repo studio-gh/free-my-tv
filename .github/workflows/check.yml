@@ -38,8 +38,10 @@ jobs:
         env:
           TEST_KEYSTORE_BASE64: ${{ secrets.TV_STUDIO_TEST_KEYSTORE_BASE64 }}
           TEST_KEYSTORE_PASSWORD: ${{ secrets.TV_STUDIO_TEST_KEYSTORE_PASSWORD }}
+        id: test_signing
         run: |
           if [ -z "$TEST_KEYSTORE_BASE64" ] || [ -z "$TEST_KEYSTORE_PASSWORD" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Persistent test signing is not configured. APK generation will be skipped."
             echo "Configure TV_STUDIO_TEST_KEYSTORE_BASE64 and TV_STUDIO_TEST_KEYSTORE_PASSWORD as repository Actions secrets." >> "$GITHUB_STEP_SUMMARY"
             exit 0
@@ -48,14 +50,15 @@ jobs:
           test -s "$RUNNER_TEMP/tv-studio-test.keystore"
           echo "FREEMYTV_KEYSTORE=$RUNNER_TEMP/tv-studio-test.keystore" >> "$GITHUB_ENV"
           echo "FREEMYTV_KEYSTORE_PASS=$TEST_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
           echo "Test APK uses the persistent TV_STUDIO_TEST_KEYSTORE signing identity." >> "$GITHUB_STEP_SUMMARY"
 
       # Validate the launcher and also publish a generic APK for TV installation.
       - name: Build generic Google TV APK
-        if: env.FREEMYTV_KEYSTORE != ''
+        if: steps.test_signing.outputs.ready == 'true'
         run: ./build.sh --generic --test-install
       - name: Upload Google TV APK
-        if: env.FREEMYTV_KEYSTORE != ''
+        if: steps.test_signing.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: TV-Studio-Test-APK
