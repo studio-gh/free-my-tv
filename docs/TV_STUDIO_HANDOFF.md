@@ -29,3 +29,27 @@ Do not promote or install the new build as permanent until:
 2. New and empty calendar responses are verified, and network errors preserve the last known good agenda.
 3. Remote navigation and restart are tested on Philips 65PUG7406/78, Android TV 11.
 4. Original launcher recovery is confirmed.
+
+## Saturday handoff · 31 Oct 2026
+
+### Verified CI
+- Run 82: `41205307305`, both jobs concluded successfully.
+- Android job: SDK setup passed; persistent signing step concluded successfully but reported the required secrets are absent; APK build and upload were intentionally skipped.
+- Web validation passed.
+- No workflow artifacts were produced. This is a green validation workflow, not an APK build.
+
+### Build validation
+- `tools/check.sh` now checks that literal native `Symbols.draw/warm` references have matching PNG assets under `app/assets/symbols`.
+- The Android job uses the same shared script via the build validation path in the repository. Re-run CI after changes to verify it.
+- The icon generator includes the planned household concepts, but the generated assets still do not exist. Keep the currently bundled icons in the Home until the PNGs are created and checked in.
+- Do not describe the four final visual icons as delivered yet.
+
+### Remaining release blockers
+1. Configure `TV_STUDIO_TEST_KEYSTORE_BASE64` and `TV_STUDIO_TEST_KEYSTORE_PASSWORD` as repository Actions secrets, without sharing either value in chat or committing the keystore.
+2. Generate and commit the final household mood PNGs, then verify each asset is present and rendered.
+3. Build and inspect the signed test APK, validate its package ID and signature, and install/launch only the isolated test package on Philips 65PUG7406/78.
+4. Capture and review the actual TV screen. CI success alone is not device acceptance.
+
+### Safety
+- Preserve production package `io.freemytv` and Philips system launcher.
+- Do not reuse old artifact `12840644804`; it was signed with an ephemeral key and did not pass visual acceptance.
