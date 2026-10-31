@@ -3323,10 +3323,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             }
             cursor += textWidth + 34 * k;
         }
-        fill.setColor(0x55FFFCF4);
-        fill.setStrokeWidth(1 * k);
-        c.drawLine((CONTENT_R - 220) * k, 40 * k, (CONTENT_R - 220) * k, 91 * k, fill);
-        Symbols.draw(getContext(), c, "search", (CONTENT_R - 145) * k, y, 25 * k, 0xFFFFFCF4);
+        // No search affordance until a working title-search screen exists.
     }
 
     private void activatePhotoNav() {
