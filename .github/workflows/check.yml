@@ -3,6 +3,7 @@
 name: Check
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: [main]
@@ -32,8 +33,38 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$RUNNER_TEMP/sdk" \
             "build-tools;34.0.0" "platforms;android-34" > /dev/null
           echo "ANDROID_HOME=$RUNNER_TEMP/sdk" >> "$GITHUB_ENV"
-      # build.sh makes a throwaway config.properties and signing key: no secrets needed.
-      - run: tools/check.sh android
+      # A stable test signing key is mandatory: never publish a build that can silently rotate its identity.
+      - name: Configure persistent test signing key
+        env:
+          TEST_KEYSTORE_BASE64: ${{ secrets.TV_STUDIO_TEST_KEYSTORE_BASE64 }}
+          TEST_KEYSTORE_PASSWORD: ${{ secrets.TV_STUDIO_TEST_KEYSTORE_PASSWORD }}
+        id: test_signing
+        run: |
+          if [ -z "$TEST_KEYSTORE_BASE64" ] || [ -z "$TEST_KEYSTORE_PASSWORD" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Persistent test signing is not configured. APK generation will be skipped."
+            echo "Configure TV_STUDIO_TEST_KEYSTORE_BASE64 and TV_STUDIO_TEST_KEYSTORE_PASSWORD as repository Actions secrets." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          printf '%s' "$TEST_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/tv-studio-test.keystore"
+          test -s "$RUNNER_TEMP/tv-studio-test.keystore"
+          echo "FREEMYTV_KEYSTORE=$RUNNER_TEMP/tv-studio-test.keystore" >> "$GITHUB_ENV"
+          echo "FREEMYTV_KEYSTORE_PASS=$TEST_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "Test APK uses the persistent TV_STUDIO_TEST_KEYSTORE signing identity." >> "$GITHUB_STEP_SUMMARY"
+
+      # Validate the launcher and also publish a generic APK for TV installation.
+      - name: Build generic Google TV APK
+        if: steps.test_signing.outputs.ready == 'true'
+        run: ./build.sh --generic --test-install
+      - name: Upload Google TV APK
+        if: steps.test_signing.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: TV-Studio-Test-APK
+          path: FreeMyTV.apk
+          if-no-files-found: error
+          retention-days: 14
 
   web:
     name: Translations, LG and Samsung

@@ -33,14 +33,16 @@ import java.util.regex.Pattern;
 final class HomeMode {
     private HomeMode() {}
 
-    static final String PKG = "io.freemytv";
-    static final String HOME_ACTIVITY = PKG + "/" + PKG + ".HomeActivity";
-    static final String SETTINGS_ACTIVITY = PKG + "/" + PKG + ".SettingsActivity";
+    /** Package ID installed by this build; the Java namespace remains io.freemytv in test builds too. */
+    static final String CODE_PACKAGE = "io.freemytv";
+    static final String PKG = Config.APP_ID;
+    static final String HOME_ACTIVITY = PKG + "/" + CODE_PACKAGE + ".HomeActivity";
+    static final String SETTINGS_ACTIVITY = PKG + "/" + CODE_PACKAGE + ".SettingsActivity";
     /** Our screensaver: on Android 11 to 12L the copy that runs in the main process (ScreensaverAlone, #10). */
     private static final boolean DREAM_ALONE = Build.VERSION.SDK_INT >= 30 && Build.VERSION.SDK_INT <= 32;
-    static final String DREAM = PKG + "/" + PKG + (DREAM_ALONE ? ".ScreensaverAlone" : ".Screensaver");
+    static final String DREAM = PKG + "/" + CODE_PACKAGE + (DREAM_ALONE ? ".ScreensaverAlone" : ".Screensaver");
     /** The other copy: an update (ours or the TV's) moves the setting from it, without a notice. */
-    private static final String OTHER_DREAM = PKG + "/" + PKG + (DREAM_ALONE ? ".Screensaver" : ".ScreensaverAlone");
+    private static final String OTHER_DREAM = PKG + "/" + CODE_PACKAGE + (DREAM_ALONE ? ".Screensaver" : ".ScreensaverAlone");
     static final String FREE = "free", ORIGINAL = "original";
 
     /**
@@ -270,7 +272,7 @@ final class HomeMode {
         }
     }
 
-    private static final String REMOTE_SERVICE = PKG + "/" + PKG + ".RemoteKeyService";
+    private static final String REMOTE_SERVICE = PKG + "/" + CODE_PACKAGE + ".RemoteKeyService";
     private static final Pattern SERVICE = Pattern.compile("[\\w.]+/[\\w.$]+");
 
     /** Adds ours to the enabled accessibility services (keeping the others, like TalkBack), or takes it out. */
@@ -303,7 +305,7 @@ final class HomeMode {
         AppLog.w("remote buttons service " + (on ? "on" : "off"));
     }
 
-    private static final String NOW_PLAYING = PKG + "/" + PKG + ".NowPlaying";
+    private static final String NOW_PLAYING = PKG + "/" + CODE_PACKAGE + ".NowPlaying";
 
     /**
      * Home Settings' Now Playing widget reads what apps play through our notification listener, which could read every

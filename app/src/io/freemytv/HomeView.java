@@ -52,10 +52,10 @@ import java.util.function.Consumer;
  *  - three cards with the titles recommended for right now in the selected tab (Recs, from TMDB); the background is
  *    the first card's photo, heavily blurred and almost white (Backdrop); without picks, one of your own photos
  *    (Photos) the same way, or else a light gradient;
- *  - at the bottom, the glass shelf with the apps (icons in each brand's color, like the tvOS Dock; the focused one
- *    grows);
+ *  - without recommendations, the clock and weather are on the left and the shared family agenda is a glass card on the right;
+ *  - at the bottom, the glass shelf with the apps (icons in each brand's color, like the tvOS Dock; the focused one grows);
  *  - ↓ on the shelf: everything moves up and the bottom drawer appears (inputs, shortcuts, weather for the next hours or days
- *    and quotes with the 24 h change); the background lightens (darkens at night). ↑ or Back closes it;
+ *    and the shared family agenda); the background lightens (darkens at night). ↑ or Back closes it;
  *  - from sunset to sunrise, a night look: dark background, smoked glass and white text.
  * Measurements are in a 1920×1080 space (k = width / 1920). The screen is split into layers so the TV's weak GPU only
  * redraws what changed.
@@ -84,21 +84,30 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     // "All Apps" sheet.
     private static final int COLUMNS = 5, VISIBLE_ROWS = 3;
     private static final float GRID_W = 300, GRID_H = 169, GRID_GAP = 40, GRID_ROW = 239, GRID_TOP = 196, GRID_RADIUS = 22;
-    private static final int SMOKE = 0xFF111113, INK = 0xFF1C1C1E, WHITE = 0xFFF5F5F7;
+    private static final int SMOKE = 0xFF2C2C2C, INK = 0xFF2C2C2C, WHITE = 0xFFFFFCF4;
     private static final int UP_COLOR = 0xFF30D158, DOWN_COLOR = 0xFFFF453A;
+    private static final int STUDIO_ACCENT = 0xFFFF961A;
     private static final long TOAST_MS = 6000, FADE_MS = 800;
     /** Blur radii of the shadow and shadowDeep paints (Shadows needs them to draw the same blur on older TVs). */
     private static final float SHADOW_BLUR = 26, DEEP_BLUR = 30;
     private static final int SKY = 0, HERO = 1, STATUS = 2, PLATTER = 3, TILES = 4, DRAWER = 5, SHEET = 6, TOAST = 7;
     private static final int Z_STATUS = 0, Z_HERO = 1, Z_SHELF = 2, Z_DRAWER = 3;
     private static final ExecutorService LOADER = Executors.newSingleThreadExecutor();
+    // One subtle grain pass at the top of the layer stack, so it textures the interface without per-card work.
+    private Bitmap grainBitmap;
+    private BitmapShader grainShader;
+    private Paint grainPaint;
+
     // Light design (the L_ constants): title, tab bar, three recommendation cards and the shelf.
     // The tab bar is a 68 px capsule; the cards sit on the 5-column grid (the wide one spans 3).
     private static final float L_TITLE_BASE = 130, L_TABBAR_TOP = 158, L_TABBAR_H = 68, L_CARDS_TOP = 262, L_CARD_H = 442;
+    // Photo-first home layout. Google Photos connection remains a separate, explicitly gated integration.
+    private static final int Z_PHOTOS = 6;
+    private static final float PHOTO_HERO_TOP = 228, PHOTO_HERO_BOTTOM = 548, PHOTO_MOOD_TOP = 568, PHOTO_MOOD_H = 100;
     private static final float L_TALL_W = 320, L_CARD_GAP = 40, L_BUTTON = 68, L_BUTTON_GAP = 20, L_BUTTON_CY = 103;
     private static final float L_PLATTER_TOP = 814, L_TILE_H = 126;
     private static final float L_DATE_BASE = 330, L_CLOCK_BASE = 540, L_WEATHER_BASE = 626, L_QUOTES_BASE = 694;
-    private static final int L_INK = 0xFF1D1D1F, L_DIM = 0xFF6E6E73, L_FAINT = 0xFF8E8E93;
+    private static final int L_INK = 0xFFFFFCF4, L_DIM = 0xFFCBC7BE, L_FAINT = 0xFF9D988F;
     private static String[] tabs;
     private static int tabsGeneration = -1;
     private static final String[] TAB_KIND = {null, "movie", "tv"};
@@ -126,7 +135,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     });
     private final RectF a11yRect = new RectF();
     private final Layer sky, heroLayer, status, platter, tiles, drawerLayer, sheetLayer, toastLayer;
-    private int zone = Z_SHELF;
+    private int zone = Z_PHOTOS;
+    private int photoMoodIndex;
+    private int photoNavIndex = 1;
+    private boolean photoNavFocused;
+    private boolean photoSectionVisible = true;
 
     // Night look (like Apple's "Automatic" appearance): darker from sunset to sunrise, with a 2 s transition.
     private static final long NIGHT_MS = 2000;
@@ -273,7 +286,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private final Paint veil = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint tileFill = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final RectF tmp = new RectF(), cell = new RectF(), screen = new RectF();
+    private final RectF tmp = new RectF(), cell = new RectF(), screen = new RectF(), homeAgendaRect = new RectF();
     private final TextPaint fitPaint = new TextPaint();
     private final RectF gridCell = new RectF();
     private LinearGradient[] tileShaders = new LinearGradient[0];
@@ -291,6 +304,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private String weatherTitle, nowTemp, highLow, sunriseText, sunsetText, staleText;
     private final String[] hourText = new String[6], hourTempText = new String[6];
     private final String[] dayText = new String[5], dayMaxText = new String[5], dayMinText = new String[5];
+    private volatile List<String> agendaLines = new ArrayList<>();
+    private long agendaRequestedAt;
+    private final Paint agendaLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final TextPaint agendaTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
     private boolean textDays;   // the weather card shows the next days (Home Settings → Forecast) and has them
     private final String[] priceText = new String[HomeData.COINS.length], changeText = new String[HomeData.COINS.length];
 
@@ -333,8 +350,32 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 case SHEET: drawSheet(c); break;
                 default: drawToast(c); break;
             }
+            if (kind == TOAST) drawGrain(c);
             scene.setOffset(0, 0);
         }
+    }
+
+    /** Low-cost, tileable texture at about 5% opacity, painted once above the whole interface. */
+    private void drawGrain(Canvas c) {
+        if (grainPaint == null) {
+            int size = 64;
+            grainBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            int[] pixels = new int[size * size];
+            int state = 0x4B1D2C3A;
+            for (int i = 0; i < pixels.length; i++) {
+                state = state * 1664525 + 1013904223;
+                int gray = (state >>> 24) & 0xFF;
+                pixels[i] = 0xFF000000 | (gray << 16) | (gray << 8) | gray;
+            }
+            grainBitmap.setPixels(pixels, 0, size, 0, 0, size, size);
+            grainShader = new BitmapShader(grainBitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+            grainPaint = new Paint();
+            grainPaint.setShader(grainShader);
+            grainPaint.setAlpha(13); // 13/255 ≈ 5.1%
+            grainPaint.setFilterBitmap(false);
+            grainPaint.setAntiAlias(false);
+        }
+        c.drawRect(0, 0, 1920 * k, 1080 * k, grainPaint);
     }
 
     private final Runnable reloadSoon = this::reload;
@@ -362,6 +403,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             playing.start();   // the listener allowed after the screen showed (a no-op once watching)
             data.refreshIfStale();
             recs.refreshIfStale();
+            refreshAgenda(false);
             checkNotices();
             updatePalette();
             checkNight(true);
@@ -401,7 +443,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             v.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);   // TalkBack reads the items (Spoken)
             addView(v);
         }
-        setContentDescription("Free My TV");
+        setContentDescription("TV Studio");
         drawerLayer.setVisibility(INVISIBLE);
         for (int i = 0; i < topFocus.length; i++) {
             topFocus[i] = new Spring(0.26f, 0.85f, 0);
@@ -447,6 +489,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         recs.addListener(this);
         data.refreshIfStale();
         recs.refreshIfStale();
+        refreshAgenda(true);
         Photos.importInbox(getContext(), ownReady);   // photos a computer just sent
         if (tvInputs != null) tvInputs.registerCallback(inputCallback, handler);
         handler.postDelayed(tick, 15_000);
@@ -572,7 +615,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         measure(tiles, width, Math.round(270 * kk));
         measure(drawerLayer, width, Math.round(600 * kk));
         measure(sheetLayer, width, height);
-        measure(toastLayer, Math.round(1000 * kk), Math.round(220 * kk));
+        // The topmost toast layer also carries the 5% grain overlay, so it must span the whole screen.
+        measure(toastLayer, width, height);
         setMeasuredDimension(width, height);
     }
 
@@ -592,7 +636,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         sheetLayer.layout(0, 0, width, height);
         sheetLayer.setPivotX(width / 2f);
         sheetLayer.setPivotY(height / 2f);
-        place(toastLayer, (width - toastLayer.getMeasuredWidth()) / 2, 0);
+        // Keep toast drawing in full-screen coordinates; transparent pixels leave the layers beneath visible.
+        toastLayer.layout(0, 0, width, height);
     }
 
     private static void place(View v, int x, int y) {
@@ -604,6 +649,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         h = height;
         k = w / 1920f;
         screen.set(0, 0, w, h);
+        homeAgendaRect.set(980 * k, 275 * k, (CONTENT_R - 80) * k, 680 * k);
+        snap(homeAgendaRect);
         scene.setSize(w, h);
         makePaints();
         gridLabels = null;
@@ -647,6 +694,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         lClock.setLetterSpacing(-0.01f);
         lWeather = Ui.text(Ui.medium, 34 * k, L_DIM);
         lClockQuote = Ui.numbers(Ui.medium, 28 * k, L_DIM);
+        agendaLabelPaint.setTypeface(Ui.semibold);
+        agendaLabelPaint.setTextSize(20 * k);
+        agendaTextPaint.setTypeface(Ui.medium);
+        agendaTextPaint.setTextSize(26 * k);
         lightGradient = null;
         buttonPaint = Ui.text(Ui.semibold, 29 * k, INK);
         capsuleText = Ui.numbers(Ui.medium, 29 * k, 0xF2FFFFFF);
@@ -956,7 +1007,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             nightPair = false;
             return;
         }
-        int color = blend(0xFFEBEBF0, 0xFF141416, night);
+        int color = 0xFF2C2C2C;
         java.util.Arrays.fill(neutralFrostPx, color);
         java.util.Arrays.fill(neutralGlassPx, color);
         scene.setFrost(neutralFrostPx);
@@ -977,7 +1028,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** Day or night right now (from the sun at your location); `animate`: with the transition. */
     private void checkNight(boolean animate) {
-        boolean want = data.isNight(System.currentTimeMillis());
+        boolean want = true; // TV Studio uses the approved dark theme at all hours.
         if (want == nightTarget) return;
         nightTarget = want;
         if (animate && running) {
@@ -1043,7 +1094,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void applyTone() {
         lTitle.setColor(tone(L_INK, WHITE));
         lTab.setColor(tone(L_DIM, 0xFF8E8E93));
-        lTabOn.setColor(tone(L_INK, WHITE));
+        lTabOn.setColor(STUDIO_ACCENT);
         lCardTitle.setColor(tone(L_INK, WHITE));
         lCardMeta.setColor(tone(L_DIM, 0xFF98989D));
         lQuote.setColor(tone(L_FAINT, 0xB8FFFFFF));
@@ -1665,7 +1716,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             x += tw + gap;
         }
         float cardsTop = CARDS_TOP * k, split = left + (right - left) * 0.585f;
-        boolean wx = Prefs.weather(), qt = Prefs.quotes() && HomeData.active().length > 0;
+        boolean wx = Prefs.weather(), qt = true; // The second card is the shared family agenda.
         // A card that is off gives its room to the other one.
         weatherCard.set(left, cardsTop, qt ? split - 16 * k : right, cardsTop + CARDS_H * k);
         quotesCard.set(wx ? split + 16 * k : left, cardsTop, right, cardsTop + CARDS_H * k);
@@ -1743,7 +1794,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = 0; i < drawerItems.size(); i++) if (i != top) drawDrawerTile(c, i);
         if (top >= 0) drawDrawerTile(c, top);
         if (Prefs.weather()) drawWeatherCard(c, weatherCard);
-        if (Prefs.quotes() && HomeData.active().length > 0) drawQuotesCard(c, quotesCard);
+        drawAgendaWidget(c, quotesCard);
     }
 
     /** Square drawer button: symbol and name; an input with no device is dimmed. Focused: white, with dark text. */
@@ -1783,6 +1834,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** Weather for your location: now (large), the next 6 hours or 5 days, and sunrise and sunset. */
     private void drawWeatherCard(Canvas c, RectF r) {
         drawerCard(c, r);
+        if (zone == WIDGETS && widgetIndex == 0) {
+            fill.setShader(null);
+            fill.setStyle(Paint.Style.STROKE);
+            fill.setStrokeWidth(3 * k);
+            fill.setColor(tone(0xFF77777C, 0xFFF5F5F7));
+            c.drawRoundRect(r, 30 * k, 30 * k, fill);
+            fill.setStyle(Paint.Style.FILL);
+        }
         if (Ui.LEGACY) weatherSnapshot.draw(c, r, drawerCardsKey(), cc -> drawWeather(cc, r));
         else drawWeather(c, r);
     }
@@ -1874,6 +1933,73 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         Symbols.draw(getContext(), c, symbol, x + sw / 2, base - Ui.halfCap(cardDim), size, tone(L_DIM, 0xB3FFFFFF));
         c.drawText(label, x + sw + 10 * k, base, cardDim);
         return x + sw + 10 * k + cardDim.measureText(label);
+    }
+
+    /** Read-only family calendar widget, shown beside the weather in the bottom drawer. */
+    private void drawAgendaWidget(Canvas c, RectF r) {
+        drawerCard(c, r);
+        if (zone == WIDGETS && widgetIndex == 1) {
+            fill.setShader(null);
+            fill.setStyle(Paint.Style.STROKE);
+            fill.setStrokeWidth(3 * k);
+            fill.setColor(tone(0xFF77777C, 0xFFF5F5F7));
+            c.drawRoundRect(r, 30 * k, 30 * k, fill);
+            fill.setStyle(Paint.Style.FILL);
+        }
+        float x = r.left + 30 * k;
+        cardTitle.setColor(tone(L_DIM, 0xB3FFFFFF));
+        cardDim.setColor(tone(L_DIM, 0xADFFFFFF));
+        agendaTextPaint.setTextSize(24 * k);
+        agendaTextPaint.setColor(drawerInk(0.95f));
+        c.drawText("Agenda · Guiga e Rê", x, r.top + 54 * k, cardTitle);
+        List<String> events = agendaLines;
+        float maxWidth = r.width() - 60 * k;
+        if (events.isEmpty()) {
+            c.drawText("Agenda indisponível", x, r.top + 118 * k, agendaTextPaint);
+            c.drawText("Verifique a conexão", x, r.top + 160 * k, cardDim);
+            return;
+        }
+        for (int i = 0; i < events.size() && i < 3; i++) {
+            String line = TextUtils.ellipsize(events.get(i), agendaTextPaint, maxWidth, TextUtils.TruncateAt.END).toString();
+            c.drawText(line, x, r.top + (112 + i * 54) * k, agendaTextPaint);
+        }
+        if (events.size() > 3) {
+            c.drawText("+" + (events.size() - 3) + " compromissos", x, r.bottom - 24 * k, cardDim);
+        }
+    }
+
+    /** Visible home-screen agenda card; the drawer version remains available for remote navigation. */
+    private void drawHomeAgendaWidget(Canvas c) {
+        RectF r = homeAgendaRect;
+        drawerCard(c, r);
+        cardTitle.setColor(tone(L_DIM, 0xB3FFFFFF));
+        cardDim.setColor(tone(L_DIM, 0xADFFFFFF));
+        agendaTextPaint.setTextSize(25 * k);
+        agendaTextPaint.setColor(drawerInk(0.95f));
+        float x = r.left + 30 * k;
+        float maxWidth = r.width() - 60 * k;
+        c.drawText("Agenda · Guiga e Rê", x, r.top + 56 * k, cardTitle);
+        List<String> events = agendaLines;
+        if (events.isEmpty()) {
+            c.drawText("Agenda indisponível", x, r.top + 132 * k, agendaTextPaint);
+            c.drawText("Verifique a conexão", x, r.top + 184 * k, cardDim);
+            return;
+        }
+        for (int i = 0; i < events.size() && i < 4; i++) {
+            String line = TextUtils.ellipsize(events.get(i), agendaTextPaint, maxWidth, TextUtils.TruncateAt.END).toString();
+            c.drawText(line, x, r.top + (126 + i * 58) * k, agendaTextPaint);
+        }
+        if (events.size() > 4) {
+            c.drawText("+" + (events.size() - 4) + " compromissos", x, r.bottom - 26 * k, cardDim);
+        }
+    }
+
+    private String agendaText() {
+        StringBuilder text = new StringBuilder("Agenda Guiga e Rê");
+        List<String> events = agendaLines;
+        if (events.isEmpty()) return text.append(". Agenda indisponível no momento.").toString();
+        for (int i = 0; i < events.size() && i < 6; i++) text.append(". ").append(events.get(i));
+        return text.toString();
     }
 
     /** Prices in the configured currency with the 24 h change (green/red, like Apple's Stocks app). */
@@ -2311,6 +2437,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private void back() {
+        if (photoSectionVisible) return;
         if (sheetOpen) {
             closeSheet();
         } else if (zone == Z_DRAWER || zone == WIDGETS) {
@@ -2385,6 +2512,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                     zone = Z_DRAWER;
                 } else if (dx != 0 && at + dx >= 0 && at + dx < on.size()) {
                     widgetIndex = on.get(at + dx);
+                    drawerDirty = true;
                 } else {
                     return;
                 }
@@ -2397,8 +2525,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                     drawerIndex = next;
                 } else if (dy < 0) {
                     closeDrawer();
-                } else if (talkBack() && !widgets().isEmpty()) {
-                    // Only with TalkBack: the widgets are there to be read, and this is how it gets to them.
+                } else if (!widgets().isEmpty()) {
+                    // Widgets are part of the remote's normal navigation, not TalkBack-only.
                     zone = WIDGETS;
                     widgetIndex = widgets().get(0);
                 } else {
@@ -2445,6 +2573,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void activate() {
         wake();
+        if (photoSectionVisible && photoNavFocused) {
+            activatePhotoNav();
+            return;
+        }
+        if (photoSectionVisible && zone == Z_PHOTOS) {
+            showToast("Conecte o Google Fotos para trocar os álbuns. Esta versão ainda não tem essa integração.");
+            return;
+        }
         if (reordering) {   // TalkBack's click while moving an app: drop it
             dropReorder();
             return;
@@ -2754,6 +2890,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private void a11yItems(List<Integer> out) {
+        if (photoSectionVisible) { out.add(a11yId(Z_PHOTOS, photoMoodIndex)); return; }
         if (sheetOpen) {
             for (int i = 0; i < others.size(); i++) out.add(a11yId(GRID, i));
             return;
@@ -2763,11 +2900,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = shelfFirst; i < Math.min(shelf.size(), shelfFirst + shelfVisible); i++) out.add(a11yId(Z_SHELF, i));
         for (int i = 0; i < drawerItems.size(); i++) out.add(a11yId(Z_DRAWER, i));
         if (drawerOpen && Prefs.weather()) out.add(a11yId(WIDGETS, 0));
-        if (drawerOpen && Prefs.quotes() && HomeData.active().length > 0) out.add(a11yId(WIDGETS, 1));
+        if (drawerOpen) out.add(a11yId(WIDGETS, 1));
     }
 
     private String a11yText(int id) {
         int group = (id - 1) / 1000, i = (id - 1) % 1000;
+        if (group == Z_PHOTOS) return new String[] {"Família", "Visitas", "Calma", "Arte"}[Math.max(0, Math.min(3, i))] + " · Modo descanso";
         switch (group) {
             case GRID:
                 if (i >= others.size()) return "";
@@ -2783,7 +2921,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 }
                 return label(shelf, i);
             case Z_DRAWER: return label(drawerItems, i);
-            case WIDGETS: return i == 0 ? weatherText() : quotesText();
+            case WIDGETS: return i == 0 ? weatherText() : agendaText();
             default: return "";
         }
     }
@@ -2842,6 +2980,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private int a11yFocused() {
+        if (photoSectionVisible) return a11yId(Z_PHOTOS, photoMoodIndex);
         if (sheetOpen) return others.isEmpty() ? -1 : a11yId(GRID, gridIndex);
         switch (zone) {
             case Z_TOP: return a11yId(Z_TOP, topIndex);
@@ -2858,7 +2997,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         List<Integer> out = new ArrayList<>();
         if (!drawerOpen) return out;
         if (Prefs.weather()) out.add(0);
-        if (Prefs.quotes() && HomeData.active().length > 0) out.add(1);
+        out.add(1);
         return out;
     }
 
@@ -2873,6 +3012,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void a11yFocus(int id) {
         wake();
         int group = (id - 1) / 1000, i = (id - 1) % 1000;
+        if (group == Z_PHOTOS) { photoSectionVisible = true; zone = Z_PHOTOS; photoMoodIndex = Math.max(0, Math.min(3, i)); heroDirty = true; return; }
         if (group == GRID) {
             if (!sheetOpen || i >= others.size()) return;
             gridIndex = i;
@@ -3032,8 +3172,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             List<Recs.Pick> other = recs.now(TAB_KIND[t]);
             for (int i = 0; i < Math.min(3, other.size()); i++) recs.backdrop(other.get(i));
         }
-        // Picks bring their own background; without them (no TMDB key), your photo if there is one.
-        boolean own = !picksOn() && Photos.on(getContext());
+        // The photo ambience is the Home background even when TMDB recommendations are enabled.
+        // Entertainment continues to use its own title backdrop after scrolling down.
+        boolean own = photoSectionVisible && Photos.on(getContext()) || !picksOn() && Photos.on(getContext());
         Backdrop b = own ? Photos.backdrop(getContext(), ownReady) : cards.isEmpty() ? null : recs.backdrop(cards.get(0));
         if (b != null || (cards.isEmpty() && !own)) showBackdrop(b);
         heroDirty = true;
@@ -3093,12 +3234,21 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     private void drawLightTop(Canvas c) {
         applyTone();
+        if (photoSectionVisible) {
+            drawPhotoHome(c);
+            return;
+        }
         if (!picksOn()) {
+            String hello = "Filmes e séries";
+            c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
+            lCardMeta.setColor(tone(L_DIM, 0xFF98989D));
+            c.drawText("Adicione sua chave TMDB em Ajustes do Início para ver recomendações.", MARGIN * k, 196 * k, lCardMeta);
             drawClock(c);
+            if (!drawerOpen) drawHomeAgendaWidget(c);
             if (HomeData.coinCount() > 0 || playingTab != null) drawQuotes(c);
             return;
         }
-        String hello = Ui.tr("For You");
+        String hello = "Filmes e séries";
         c.drawText(hello, MARGIN * k - Ui.leftBearing(lTitle, hello), L_TITLE_BASE * k, lTitle);
         // Text tabs (the selected one in bold, in the main text color); with focus on the tabs, the selected one gets
         // the white pill with a shadow and grows a little (the tvOS focus).
@@ -3121,7 +3271,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 c.drawRoundRect(cell, rr, rr, fill);
             }
             Paint p = i == tab ? lTabOn : lTab;
-            if (i == tab) lTabOn.setColor(blend(tone(L_INK, WHITE), L_INK, focus));   // always dark on the white pill
+            if (i == tab) lTabOn.setColor(blend(STUDIO_ACCENT, 0xFF2C2C2C, focus));   // charcoal text on the orange pill
             c.drawText(tabs()[i], r.centerX() - p.measureText(tabs()[i]) / 2, r.centerY() + Ui.halfCap(p), p);
         }
         layoutCards();
@@ -3133,8 +3283,207 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (HomeData.coinCount() > 0 || playingTab != null) drawQuotes(c);
     }
 
+    /**
+     * Ambient-first home. The selected home photo is drawn by SKY behind every transparent UI layer.
+     * Photo albums are imported locally; this screen does not claim a live Google Photos connection.
+     */
+    /** Photo-first Home with a full-screen ambient image and translucent family widgets. */
+    /**
+     * Native TV Studio navigation header. Keep this in the same renderer as the home screen
+     * so the APK and the approved preview share the same implementation, not a web-only mock.
+     */
+    private void drawPhotoNavBar(Canvas c) {
+        float y = 66 * k;
+        Paint brand = Ui.text(Ui.displaySemibold, 31 * k, 0xFFFFFCF4);
+        brand.setShadowLayer(10 * k, 0, 1 * k, 0x66000000);
+        c.drawText("⚡ TV Studio", 62 * k, y + Ui.halfCap(brand), brand);
+
+        // Only expose destinations backed by working native behavior in this build.
+        String[] items = {"Início", "Apps", "Configurações"};
+        float textSize = 22 * k;
+        Paint nav = Ui.text(Ui.medium, textSize, 0xFFE7E3DA);
+        Paint selected = Ui.text(Ui.semibold, textSize, 0xFF2C2C2C);
+        float cursor = 410 * k;
+        int[] destinations = {0, 6, 7};
+        for (int i = 0; i < items.length; i++) {
+            float textWidth = nav.measureText(items[i]);
+            float padX = 15 * k;
+            float pillH = 48 * k;
+            boolean active = photoNavFocused && photoNavIndex == destinations[i];
+            if (active) {
+                RectF pill = new RectF(cursor - padX, y - pillH / 2,
+                        cursor + textWidth + padX, y + pillH / 2);
+                fill.setShader(null);
+                fill.setStyle(Paint.Style.FILL);
+                fill.setColor(0xFFFFFCF4);
+                c.drawRoundRect(pill, 24 * k, 24 * k, fill);
+                c.drawText(items[i], cursor, y + Ui.halfCap(selected), selected);
+            } else {
+                c.drawText(items[i], cursor, y + Ui.halfCap(nav), nav);
+            }
+            cursor += textWidth + 34 * k;
+        }
+        // No search affordance until a working title-search screen exists.
+    }
+
+    private void activatePhotoNav() {
+        int destination = photoNavIndex;
+        photoNavFocused = false;
+        switch (destination) {
+            case 0:
+                photoSectionVisible = true;
+                zone = Z_PHOTOS;
+                heroDirty = true;
+                break;
+            case 6:
+                photoSectionVisible = false;
+                openDrawer();
+                break;
+            case 7:
+                photoSectionVisible = false;
+                HomeApps.open(activity, HomeApps.tvSettings(), this, w / 2, h / 2, 1, 1);
+                break;
+            default:
+                photoNavIndex = 0;
+                photoSectionVisible = true;
+                zone = Z_PHOTOS;
+                heroDirty = true;
+                break;
+        }
+        retarget(false);
+        invalidate();
+    }
+
+    private String greetingForCurrentTime() {
+        int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+        if (hour >= 5 && hour < 12) return "Bom dia";
+        if (hour >= 12 && hour < 18) return "Boa tarde";
+        return "Boa noite";
+    }
+
+    private void drawPhotoHome(Canvas c) {
+        applyTone();
+        float x = MARGIN * k;
+        drawPhotoNavBar(c);
+
+        // Keep the photo as the full canvas backdrop. Add a gentle vertical gradient and edge vignette for contrast.
+        fill.setShader(new LinearGradient(0, 0, 0, h,
+                new int[] {0xB82C2C2C, 0x482C2C2C, 0x202C2C2C, 0x8A2C2C2C},
+                new float[] {0f, 0.20f, 0.62f, 1f}, Shader.TileMode.CLAMP));
+        c.drawRect(screen, fill);
+        fill.setShader(null);
+        fill.setColor(0x38141414);
+        c.drawRect(0, 0, 0.16f * w, h, fill);
+        c.drawRect(0.84f * w, 0, w, h, fill);
+
+        // Greeting and weather block, inspired by the approved cinematic mockup.
+        lDate.setColor(0xD9FFFCF4);
+        lTitle.setColor(0xFFFFFCF4);
+        lCardTitle.setColor(0xFFFFFCF4);
+        lCardMeta.setColor(0xD9FFFCF4);
+        c.drawText(dateText.toUpperCase(java.util.Locale.ROOT),
+                x - Ui.leftBearing(lDate, dateText), 150 * k, lDate);
+
+        // A quiet digital clock in a small glass capsule, aligned to the upper-right safe area.
+        RectF clockCapsule = new RectF((CONTENT_R - 190) * k, 104 * k, CONTENT_R * k, 158 * k);
+        fill.setShader(null);
+        fill.setColor(0x702C2C2C);
+        c.drawRoundRect(clockCapsule, 28 * k, 28 * k, fill);
+        fill.setStyle(Paint.Style.STROKE);
+        fill.setStrokeWidth(1.5f * k);
+        fill.setColor(0x55FFFCF4);
+        c.drawRoundRect(clockCapsule, 28 * k, 28 * k, fill);
+        fill.setStyle(Paint.Style.FILL);
+        lClockQuote.setColor(0xFFFFFCF4);
+        lClockQuote.setTextAlign(Paint.Align.CENTER);
+        lClockQuote.setTextSize(29 * k);
+        c.drawText(clockText, clockCapsule.centerX(), clockCapsule.centerY() + Ui.halfCap(lClockQuote), lClockQuote);
+        lClockQuote.setTextAlign(Paint.Align.LEFT);
+        lClockQuote.setTextSize(28 * k);
+
+        String hello = "Bom dia.";
+        c.drawText(hello, x - Ui.leftBearing(lTitle, hello), 244 * k, lTitle);
+
+        HomeData.Weather wx = data.weather;
+        String condition = Prefs.weather() && !Double.isNaN(wx.temp)
+                ? HomeData.degrees(wx.temp) + "  " + HomeData.condition(wx.code, wx.isDay)
+                : "Seu espaço compartilhado";
+        c.drawText(condition, x, 316 * k, lCardTitle);
+        if (Prefs.weather() && !Double.isNaN(wx.temp)) {
+            c.drawText(HomeData.highLow(wx, "  "), x, 354 * k, lCardMeta);
+        }
+
+        // Compact remote-operated ambience selectors using only verified bundled symbols.
+        float mw = 74 * k, mh = 74 * k, gap = 18 * k, top = 408 * k;
+        for (int i = 0; i < 4; i++) {
+            RectF r = new RectF(x + i * (mw + gap), top, x + i * (mw + gap) + mw, top + mh);
+            boolean focused = i == photoMoodIndex && zone == Z_PHOTOS;
+            fill.setShader(null);
+            fill.setColor(focused ? 0xC82C2C2C : 0xA82C2C2C);
+            c.drawRoundRect(r, 20 * k, 20 * k, fill);
+            fill.setStyle(Paint.Style.STROKE);
+            fill.setStrokeWidth((focused ? 3 : 1) * k);
+            fill.setColor(focused ? STUDIO_ACCENT : 0x66FFFCF4);
+            c.drawRoundRect(r, 20 * k, 20 * k, fill);
+            fill.setStyle(Paint.Style.FILL);
+            String symbol = i == 0 ? "home" : i == 1 ? "apps" : i == 2 ? "cast" : "tv";
+            Symbols.draw(getContext(), c, symbol, r.centerX(), r.centerY(), 42 * k,
+                    focused ? STUDIO_ACCENT : 0xFFFFFCF4);
+        }
+
+        // Family dashboard: a single agenda panel and the four compact ambience controls.
+        RectF agenda = new RectF(980 * k, 178 * k, (CONTENT_R - 70) * k, 690 * k);
+        drawerCard(c, agenda);
+        cardTitle.setColor(0xFFFFFCF4);
+        cardDim.setColor(0xD9FFFCF4);
+        agendaTextPaint.setTextSize(24 * k);
+        agendaTextPaint.setColor(0xFFFFFCF4);
+        c.drawText("Agenda · Guiga e Rê", agenda.left + 26 * k, agenda.top + 46 * k, cardTitle);
+        List<String> events = agendaLines;
+        if (events.isEmpty()) {
+            c.drawText("Agenda indisponível", agenda.left + 26 * k, agenda.top + 102 * k, agendaTextPaint);
+        } else {
+            for (int i = 0; i < events.size() && i < 4; i++) {
+                String line = TextUtils.ellipsize(events.get(i), agendaTextPaint, agenda.width() - 50 * k,
+                        TextUtils.TruncateAt.END).toString();
+                fill.setColor(STUDIO_ACCENT);
+                c.drawCircle(agenda.left + 29 * k, agenda.top + (86 + i * 48) * k, 4 * k, fill);
+                c.drawText(line, agenda.left + 45 * k, agenda.top + (94 + i * 48) * k, agendaTextPaint);
+            }
+        }
+
+        // Notes/messages integration is not available in this build; no fake content is shown.
+        cardTitle.setColor(0xFFFFFCF4);
+        c.drawText("↓  Filmes e séries", x, 644 * k, cardTitle);
+        lCardMeta.setColor(0xD9FFFCF4);
+        c.drawText("Use o controle remoto para continuar", x, 680 * k, lCardMeta);
+        lCardTitle.setColor(tone(L_INK, WHITE));
+        lCardMeta.setColor(tone(L_DIM, 0xFF98989D));
+    }
+
     private boolean picksOn() {
         return Recs.hasKey(getContext());
+    }
+
+    /** Loads the public, title-and-time-only family calendar feed at most every two minutes. */
+    private void refreshAgenda(boolean force) {
+        long now = SystemClock.elapsedRealtime();
+        if (!force && now - agendaRequestedAt < 2 * 60_000L) return;
+        agendaRequestedAt = now;
+        LOADER.execute(() -> {
+            CalendarAgenda.Result result = CalendarAgenda.fetch();
+            handler.post(() -> {
+                // Retain last good data only on request/parse failure; a valid empty feed is allowed to clear old events.
+                if (!result.success) return;
+                List<String> next = result.lines;
+                if (!next.equals(agendaLines)) {
+                    agendaLines = next;
+                    heroDirty = true;
+                    drawerDirty = true;
+                    wake();
+                }
+            });
+        });
     }
 
     private void drawClock(Canvas c) {
@@ -3276,6 +3625,60 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private boolean moveLight(int dx, int dy) {
+        // Up from entertainment returns to the photo ambience without waiting for content or network.
+        if (!photoSectionVisible && zone == Z_TOP && dy < 0) {
+            photoSectionVisible = true;
+            zone = Z_PHOTOS;
+            heroDirty = true;
+            retarget(false);
+            click.move();
+            return true;
+        }
+        if (photoSectionVisible && photoNavFocused) {
+            if (dy > 0) {
+                photoNavFocused = false;
+                zone = Z_PHOTOS;
+            } else if (dy < 0) {
+                return true;
+            } else if (dx != 0) {
+                int[] available = {0, 6, 7};
+                int position = 0;
+                for (int i = 0; i < available.length; i++) if (available[i] == photoNavIndex) position = i;
+                int next = Math.max(0, Math.min(available.length - 1, position + dx));
+                photoNavIndex = available[next];
+            } else {
+                return true;
+            }
+            heroDirty = true;
+            retarget(false);
+            click.move();
+            return true;
+        }
+        if (photoSectionVisible && zone == Z_PHOTOS) {
+            if (dy > 0) {
+                photoSectionVisible = false;
+                zone = Z_TOP;
+                topIndex = tab;
+                retarget(false);
+                heroDirty = true;
+                click.move();
+                return true;
+            }
+            if (dy < 0) {
+                photoNavFocused = true;
+                photoNavIndex = 1;
+                heroDirty = true;
+                click.move();
+                return true;
+            }
+            if (dx != 0) {
+                photoMoodIndex = Math.max(0, Math.min(3, photoMoodIndex + dx));
+                heroDirty = true;
+                click.move();
+                return true;
+            }
+            return true;
+        }
         switch (zone) {
             case Z_SHELF:
                 // Up from an empty shelf too: move()'s older zones (the hero, the corner capsule) aren't drawn any more.
