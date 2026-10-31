@@ -3429,7 +3429,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             fill.setColor(focused ? STUDIO_ACCENT : 0x66FFFCF4);
             c.drawRoundRect(r, 20 * k, 20 * k, fill);
             fill.setStyle(Paint.Style.FILL);
-            String symbol = i == 0 ? "home" : i == 1 ? "apps" : i == 2 ? "cast" : "tv";
+            String symbol = i == 0 ? "family" : i == 1 ? "visits" : i == 2 ? "travel" : "art";
             Symbols.draw(getContext(), c, symbol, r.centerX(), r.centerY(), 42 * k,
                     focused ? STUDIO_ACCENT : 0xFFFFFCF4);
         }
