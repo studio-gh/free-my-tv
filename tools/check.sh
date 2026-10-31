@@ -28,7 +28,7 @@ import sys
 
 source = pathlib.Path("app/src/io/freemytv")
 assets = pathlib.Path("app/assets/symbols")
-pattern = re.compile(r'Symbols\\.(?:draw|warm)\\(getContext\\(\\),\\s*"([^\"]+)"')
+pattern = re.compile(r'Symbols\.(?:draw|warm)\(getContext\(\),\s*"([^"]+)"')
 used = set()
 for path in source.glob("*.java"):
     used.update(pattern.findall(path.read_text(encoding="utf-8")))
