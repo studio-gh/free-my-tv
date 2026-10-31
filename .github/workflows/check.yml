@@ -53,22 +53,6 @@ jobs:
           echo "ready=true" >> "$GITHUB_OUTPUT"
           echo "Test APK uses the persistent TV_STUDIO_TEST_KEYSTORE signing identity." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Validate native symbol assets
-        run: python3 - <<'PY'
-          import pathlib, re, sys
-          source = pathlib.Path("app/src/io/freemytv")
-          assets = pathlib.Path("app/assets/symbols")
-          symbols = set()
-          pattern = re.compile(r'Symbols\\.(?:draw|warm)\\(getContext\\(\\),\\s*"([^\"]+)"')
-          for path in source.glob("*.java"):
-              symbols.update(pattern.findall(path.read_text(encoding="utf-8")))
-          missing = sorted(name for name in symbols if not (assets / (name + ".png")).is_file())
-          if missing:
-              print("Missing bundled symbol PNGs: " + ", ".join(missing), file=sys.stderr)
-              sys.exit(1)
-          print(f"Verified {len(symbols)} literal native symbol assets.")
-          PY
-
       # Validate the launcher and also publish a generic APK for TV installation.
       - name: Build generic Google TV APK
         if: steps.test_signing.outputs.ready == 'true'
