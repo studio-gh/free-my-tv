@@ -24,7 +24,7 @@ Acceptance: no crash/frame hitch, new events appear after refresh, valid empty r
 ## P1 · TV Studio photo-first home layout
 
 - [ ] Implement the approved layout in [`docs/HOME_LAYOUT.md`](HOME_LAYOUT.md): Google Photos / photo ambience occupies the initial hero; films and series appear only after navigating down.
-- [ ] Keep the four remote-first moods: Família, Visitas, Calma and Arte.
+- [ ] Keep the four remote-first moods: Família, Visitas, Viagem and Arte.
 - [ ] Never present a mock photo or mood selector as a working Google Photos integration.
 - [ ] Make Down enter the entertainment section and Up return to the photo area, with local and immediate focus changes.
 - [ ] Preserve the app shelf and essential system affordances without blocking on network or image decode.
@@ -36,7 +36,7 @@ Goal: let the user switch between curated photo moods directly from the TV Studi
 - [ ] Check eligibility and submit an expression of interest for the Google Photos Partner Program if appropriate; the Ambient API requires partner-program acceptance. Do not assume access is available.
 - [ ] Until Ambient API access is approved, use native Android/Google TV Ambient Mode as the free fallback and do not present in-app Google Photos album switching as implemented.
 - [ ] Prototype the smallest end-to-end integration on Android TV: authenticate one Google account, retrieve the authorised ambient media and render a slideshow.
-- [ ] Add a remote-first “Modo descanso” selector with presets: Família, Visitas, Calma and Arte.
+- [ ] Add a remote-first “Modo descanso” selector with presets: Família, Visitas, Viagem and Arte.
 - [ ] Map each preset to a user-selected Google Photos collection/album where the API and account permissions support it; persist only preset-to-collection identifiers locally.
 - [ ] Keep a fallback that opens the native Google TV / Android TV Ambient Mode settings for album selection if in-app album listing or switching is not supported.
 - [ ] Keep photo tokens and OAuth credentials out of the APK source, repository, logs and URLs; request only the minimum scopes and provide a disconnect/reset path.
@@ -46,7 +46,7 @@ Goal: let the user switch between curated photo moods directly from the TV Studi
 Mood defaults:
 - **Família:** family moments and everyday photos.
 - **Visitas:** shareable travel, landscapes and art; avoid private albums.
-- **Calma:** sea, nature and quiet photography.
+- **Viagem:** travel, places and shared experiences.
 - **Arte:** artwork and visual inspiration.
 
 Technical constraint: Google Photos Picker API is a user-mediated media selection flow, while the Library API is limited to content created by the app. Do not assume either API can freely enumerate every existing Google Photos album. Validate the dedicated Ambient API before choosing the implementation. The native system Ambient Mode is the no-cost fallback and can already display user-selected Google Photos albums on supported devices.
