@@ -53,3 +53,24 @@ Do not promote or install the new build as permanent until:
 ### Safety
 - Preserve production package `io.freemytv` and Philips system launcher.
 - Do not reuse old artifact `12840644804`; it was signed with an ephemeral key and did not pass visual acceptance.
+
+## Delivery estimate · 31 Oct 2026 (11:18 BRT)
+
+### Current verified state
+- PR #2 remains open and mergeable at head `93914f11f6792b430307a6784d82f49155f67cd8`.
+- Latest available validation is run 85 (`41209644707`): Android and Web jobs completed successfully.
+- Android signing configuration step did not find persistent keystore secrets; APK build and upload were skipped.
+- No artifact exists for the current head.
+- The last known old test artifact remains rejected for visual acceptance and was signed with an ephemeral key.
+
+### Estimate to next installable test APK
+Planning estimate: 2–4 focused development calls after persistent signing secrets are configured, plus one physical-device validation cycle. This is an estimate, not a guarantee. Without the secrets, no honest delivery date or APK count can be committed.
+
+### Work remaining before a test APK
+1. Generate and add final mood PNG assets (Family, Visits, Travel, Art) and verify the symbol catalogue.
+2. Configure the two Actions secrets: `TV_STUDIO_TEST_KEYSTORE_BASE64`, `TV_STUDIO_TEST_KEYSTORE_PASSWORD`.
+3. Run CI, ensure APK build/upload executes rather than skips, inspect package ID and signature.
+4. Install only the isolated test package, open its explicit HomeActivity, and visually inspect the Philips TV. The original launcher and production package must remain untouched.
+
+### Product scope for the next APK
+The next APK should be a stable Home prototype, not a claim that every future integration is finished. Google Photos album-by-mood, persistent family notes, functional guest Wi-Fi QR and Spotify/Cast handoff remain separate feature work unless explicitly implemented and verified.
