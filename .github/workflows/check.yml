@@ -53,6 +53,9 @@ jobs:
           echo "ready=true" >> "$GITHUB_OUTPUT"
           echo "Test APK uses the persistent TV_STUDIO_TEST_KEYSTORE signing identity." >> "$GITHUB_STEP_SUMMARY"
 
+      # Verify native symbol references even when signing secrets are not configured.
+      - name: Validate native symbol assets
+        run: python3 tools/check_symbols.py
       # Validate the launcher and also publish a generic APK for TV installation.
       - name: Build generic Google TV APK
         if: steps.test_signing.outputs.ready == 'true'
