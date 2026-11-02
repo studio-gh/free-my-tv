@@ -1,0 +1,39 @@
+name: Bootstrap TV Studio test signing
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Generate one-time test signing material
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate persistent test keystore
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signing
+          PASSWORD="$(openssl rand -hex 24)"
+          keytool -genkeypair \
+            -keystore signing/tv-studio-test.keystore \
+            -alias tvstudio \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass "$PASSWORD" \
+            -keypass "$PASSWORD" \
+            -dname "CN=TV Studio Test" \
+            -noprompt
+          base64 -w0 signing/tv-studio-test.keystore > signing/TV_STUDIO_TEST_KEYSTORE_BASE64.txt
+          printf '%s' "$PASSWORD" > signing/TV_STUDIO_TEST_KEYSTORE_PASSWORD.txt
+          rm -f signing/tv-studio-test.keystore
+      - name: Upload one-time signing material
+        uses: actions/upload-artifact@v4
+        with:
+          name: TV-Studio-Test-Signing-Secrets
+          path: signing/*.txt
+          retention-days: 1
+          if-no-files-found: error
