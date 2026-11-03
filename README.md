@@ -42,20 +42,9 @@ About ten minutes. You need a Google TV or Android TV (Android 8 or newer) and a
    It downloads the code, installs the tools it needs, builds the app and puts it on your TV, and asks before anything important. Swap in your TV's IP and your city.
 3. **On the TV**, open *TV Studio* → *Home Screen* → *TV Studio*. That's when the TV asks *Allow USB debugging?* for TV Studio: tick *Always allow* and accept.
 
-### TV Studio test build
+### Public APK release
 
-No tools to install besides adb. The APK on the [latest release](https://github.com/studio-gh/free-my-tv/releases/latest) has no TMDB key: add yours on the TV for the picks (*Home Settings* → *TMDB key*, [below](#the-tmdb-key)). It takes your city from the TV's time zone (change it in *Home Settings* → *City*).
-
-1. **On the TV**, do step 1 above.
-2. **On your computer**, download `TVStudio.apk` from the release and install it:
-   ```bash
-   adb connect 192.168.1.50:5555
-   adb install -r TVStudio.apk
-   ```
-   On Android 14, Google Play Protect may hold the install with *Risky app blocked*: choose *More details* → *Install anyway*.
-3. **On the TV**, do step 3 above.
-
-If you built TV Studio yourself before, switch back to *Original* and uninstall it first: your build and the release are signed with different keys. For the picks, add your TMDB key in *Home Settings* → *TMDB key* (below).
+A public, signed APK release is not available yet. The Android build is still being validated on the target Philips device. Until the physical-device checks pass, use the source-build instructions below for development testing; do not treat a CI pass as release approval.
 
 **Updates come to the TV.** Once a week the APK from the release looks for a newer release and downloads it; the home screen then says so once, and *Home Settings* → *Updates* (the last row) installs it through Android's installer, which asks first (and, the first time, asks to allow TV Studio to install apps). OK on *Updates* also checks right away. The download must come from this repository's releases, match the size and SHA-256 GitHub lists, be newer, and be signed with the project's key. A build you made yourself checks only when you press *Updates*, and only says when a new version is out: build it again to update.
 
