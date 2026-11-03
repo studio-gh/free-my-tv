@@ -1,6 +1,6 @@
 # Philips compatibility diagnostics
 
-This is a **read-only** inventory for TV Studio's primary validation device: Philips 65PUG7406/78 (Android TV 11).
+This is a **read-only** inventory intended for TV Studio's primary validation device: Philips 65PUG7406/78 (Android TV 11). The package names below are discovery targets, not a universal Philips package map.
 
 It does not change the launcher, package state, Wi-Fi, inputs, accounts, or device settings. It does not read saved Wi-Fi credentials, Google account data, or personal media.
 
@@ -40,10 +40,10 @@ A missing package is reported as not installed. A command the firmware does not 
 
 ## Philips safety baseline
 
-The TV Detox field notes are useful as a second source, not as an automatic package list. Philips firmware varies by model and region. In particular:
+The [TV Detox repository](https://github.com/Potowai/android-tv-detox) documents a repeatable Android TV safety method; its published end-to-end case study is a TCL C06, not this Philips model. Use it as a process reference, not as proof of Philips package behavior. Philips firmware varies by model and region. TV Studio's existing Philips protection entries in `HomeMode.java` must be checked against a real device inventory. In particular:
 
 - Keep Philips / TP Vision components related to HOME resolution, global keys, Live TV, HDMI inputs, TV System UI, power management, settings, and factory/service menus protected.
-- Treat `org.droidtv.eum` and `org.droidtv.aurora` as protected. Disabling either has been reported to destabilize `xtv`.
+- Keep the existing `org.droidtv.eum` protection. The `eum` / `aurora` / `xtv` relationship is a device-specific caution already documented in the TV Studio codebase; confirm the installed package names and behavior on the target TV before making any change.
 - Keep MediaTek TV service, input, network, setup, and factory components protected.
 - Never infer safety from a package name alone. Check the exact device, package flags, dependencies, and behavior.
 - If package flags or inventory cannot be read, the result is **unknown**, not safe.
