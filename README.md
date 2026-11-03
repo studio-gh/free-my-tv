@@ -319,6 +319,12 @@ No accounts, no analytics, no tracking. The app talks to TMDB, Open-Meteo (with 
 - The QR code encoder follows Project Nayuki's [QR Code generator](https://www.nayuki.io/page/qr-code-generator-library) (MIT).
 - Not affiliated with Google, TCL, LG, Samsung or any streaming service. App names and logos belong to their owners.
 
+## Developer notes
+
+- [Contributing](CONTRIBUTING.md)
+- [Philips compatibility diagnostics](docs/PHILIPS_DIAGNOSTICS.md), a read-only device inventory.
+- Household-specific values such as `calendar_feed_url` belong in the ignored local `config.properties`, never in source control or public builds.
+
 ## License
 
 [MIT](LICENSE). Fork it, change it, ship it.
