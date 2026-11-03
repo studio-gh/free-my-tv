@@ -19,7 +19,6 @@ import java.util.TimeZone;
 
 /** Read-only title-and-time feed for the explicitly shared Guiga e Rê calendar. */
 final class CalendarAgenda {
-    private static final String FEED = "https://painel-casa.pages.dev/api/tv/agenda";
     private CalendarAgenda() {}
 
     /** Result distinguishes a valid empty calendar from a failed request, so callers can keep last good data only on failure. */
@@ -31,9 +30,10 @@ final class CalendarAgenda {
 
     static Result fetch() {
         List<String> lines = new ArrayList<>();
+        if (Config.CALENDAR_FEED_URL.isEmpty()) return new Result(false, lines);
         HttpURLConnection connection = null;
         try {
-            connection = (HttpURLConnection) new URL(FEED).openConnection();
+            connection = (HttpURLConnection) new URL(Config.CALENDAR_FEED_URL).openConnection();
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
