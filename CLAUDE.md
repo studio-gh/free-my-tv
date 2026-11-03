@@ -1,7 +1,7 @@
-# Free My TV: notes for Claude
+# TV Studio: notes for Claude
 
 A home screen for Google TV and Android TV that replaces the stock one, plus a settings app that switches between
-Free My TV and the TV's original home screen. A plain Android app in Java, built without Gradle by `build.sh`.
+TV Studio and the TV's original home screen. A plain Android app in Java, built without Gradle by `build.sh`.
 LG TVs (webOS) and Samsung TVs (Tizen) get the same home screen as a web app: `web/`, packed by `webos/` and `tizen/`
 (see below).
 The website (freemytv.io) is in `docs/`: static HTML, CSS and JS, no build step. A push to `main` that changes it
@@ -23,7 +23,7 @@ before you do it, and let them do the taps on the TV.
   RecoveryActivity takes Home, and a restart there factory-reset a Xiaomi. If it can't go off, the home screen stays on.
   The Kalley 43G200 (`R3_GTV`) turns it back on at every start and boot-looped without its home screen: the switch
   refuses there. On Amazon Fire TV (Fire OS: `HomeMode.AMAZON`), Amazon's launcher keeps the Home button (`priority=950`
-  on `CATEGORY_HOME`), so the switch refuses Free My TV mode while *Original* and the watchdog still run, and no
+  on `CATEGORY_HOME`), so the switch refuses TV Studio mode while *Original* and the watchdog still run, and no
   `com.amazon.*` package is ever turned off (`mayTurnOff`).
 - Never turn off an app that saved a Wi-Fi network: Android deletes its networks and Original can't bring them
   back (`wifiOwners` in `HomeMode`). When the Wi-Fi service doesn't answer, the switch stops on Wi-Fi, and the boot
@@ -69,15 +69,15 @@ before you do it, and let them do the taps on the TV.
    the launcher flashing by during "Measuring…"), so TGuard can kill `ModeJob` there (log: `TGuardMemoryManagerKillHandler
    ... tguard-kill`, then `Scheduling restart of crashed service io.freemytv/.ModeJob`). The JobScheduler runs the job
    again by itself within a minute or two, and a benchmark that fails only logs now (it used to read as "Couldn't turn on
-   Free My TV: Read timed out", #277). Tell them: if the settings screen closes on the stock launcher, wait a minute or two, then press
-   Home; Free My TV opening confirms the switch. No `adb`/`appops` setting turns TGuard off (its content providers aren't
+   TV Studio: Read timed out", #277). Tell them: if the settings screen closes on the stock launcher, wait a minute or two, then press
+   Home; TV Studio opening confirms the switch. No `adb`/`appops` setting turns TGuard off (its content providers aren't
    exported to the shell user).
    Chromecast with Google TV (Android 14) refuses port 5555 even with USB debugging on: have them turn on *Wireless
    debugging*, pair with `adb pair <address:port> <code>` (the code is on the TV), then run `adb tcpip 5555` over that
    connection. It closes again at every restart (Wireless debugging turns itself off; `persist.adb.tcp.port` is
    refused), and until `adb tcpip 5555` runs again *Original*, the watchdog and the boot check can't reach ADB. Tell
    them before the switch (#195). Google TV's voice results for films and shows come from its home app (launcherx),
-   which Free My TV mode turns off; ADB can't turn off only its home activities, so tell them before they switch.
+   which TV Studio mode turns off; ADB can't turn off only its home activities, so tell them before they switch.
    On a Mac, `adb connect` can fail with `No route to host` while the TV answers (`nc -z <IP> 5555` connects): macOS's
    Local Network privacy blocks the adb server that adb starts in the background. Start it from the same terminal
    instead (`adb kill-server; adb nodaemon server &`), or allow the terminal app under System Settings → Privacy &
@@ -85,10 +85,10 @@ before you do it, and let them do the taps on the TV.
 7. **Tell them what the switch does** before they make it: the home screen and screensaver change, a short list of
    promo apps is turned off (never uninstalled), and *Original* brings it all back. On TCL, the remote's Netflix,
    YouTube and Prime buttons keep working through a small accessibility service that only reads those buttons
-   (*Free My TV* → *Remote Buttons* picks what each opens); *Original* turns it off. On TCL's Android 11 there's no
-   service (the TV moved the volume twice with it), so there the buttons work only on Free My TV's home screen. On
-   Xiaomi TVs whose remote has no Home button, the same service makes its Mi button open Free My TV instead of PatchWall.
-8. **They switch on the TV:** *Free My TV* → *Home Screen* → *Free My TV*. The app uses the TV's own ADB on
+   (*TV Studio* → *Remote Buttons* picks what each opens); *Original* turns it off. On TCL's Android 11 there's no
+   service (the TV moved the volume twice with it), so there the buttons work only on TV Studio's home screen. On
+   Xiaomi TVs whose remote has no Home button, the same service makes its Mi button open TV Studio instead of PatchWall.
+8. **They switch on the TV:** *TV Studio* → *Home Screen* → *TV Studio*. The app uses the TV's own ADB on
    127.0.0.1 with its own key, so the TV asks once more to allow debugging. Don't switch modes from the computer.
    Before they switch, run `adb disconnect <IP>:5555` (connect again for step 9): on Android 8 to 10 the TV can hand
    its answer to a computer that's still connected (#221).
@@ -102,7 +102,7 @@ before you do it, and let them do the taps on the TV.
 ## Installing it on an LG TV (webOS)
 
 On LG it's an app, installed through LG's Developer Mode, and it changes nothing else on the TV: LG's home screen
-stays, and Free My TV opens with a long press of a number key.
+stays, and TV Studio opens with a long press of a number key.
 
 1. **Ask** for the TV's IP address and their city, if they didn't say. Tools: Python 3 and OpenSSH (`ssh`,
    `ssh-keygen`), already on macOS, Linux and Windows 10+.
@@ -116,9 +116,9 @@ stays, and Free My TV opens with a long press of a number key.
    `python3 webos/install.py <IP>` in their own terminal (yours can't answer its prompt, and the passphrase doesn't go
    in the chat). It keeps the unlocked key in `~/.ssh/freemytv_webos_<IP>` (dots as underscores), so later updates
    run from your terminal with the same command.
-6. **Tell them:** while Free My TV is open, holding a number key pins it to that key (on a remote without number keys,
+6. **Tell them:** while TV Studio is open, holding a number key pins it to that key (on a remote without number keys,
    it's in LG's app list on the home screen). Developer Mode lasts about 40 days; *EXTEND* in that app renews it (if
-   it runs out, the TV removes developer apps, and installing again brings it back). `--uninstall` removes Free My TV.
+   it runs out, the TV removes developer apps, and installing again brings it back). `--uninstall` removes TV Studio.
 7. **Empty shelf on webOS 3** (user agent Chrome 38): the app can't list the TV's apps there (`listLaunchPoints`
    denied, no `getAppLoadStatus`, and the remote control API answers `invalid origin` to file:// pages). Run
    `python3 webos/apps.py <IP>`: the TV asks them once to allow it, then build and install again. It writes
@@ -131,7 +131,7 @@ On Samsung it's an app too (Tizen 2.3+: 2015 and newer, one 2015 TV reported, #3
 Developer Mode; Samsung's home screen stays. Two ways:
 
 - **The release, no tools:** TizenBrew Installer (github.com/reisxd/TizenBrewInstaller) installs the latest GitHub
-  release when they type `simbasjungles/free-my-tv`, and on 2023+ TVs signs it with their Samsung account. That build
+  release when they type `studio-gh/free-my-tv`, and on 2023+ TVs signs it with their Samsung account. That build
   has no TMDB key built in (they type theirs in *Home Settings* → *TMDB key*) and takes the city from the TV's time
   zone. Walk them through the README's steps.
 - **Their own build** (their city, their TMDB key), below.
@@ -162,7 +162,7 @@ Developer Mode; Samsung's home screen stays. Two ways:
    `/opt/usr/apps/tmp`; on 2015 firmware `developerMode` on port 8001 can read 0 while SDB works, and SDB resets the
    connection when the TV's Host PC IP isn't this computer's current one); it only reports success
    when the TV says `install completed` (`cmd_ret:0` comes after failures too). `--uninstall` removes
-   it; some TVs' sdbd doesn't answer that, and then it's removed on the TV (Apps, Settings, Free My TV, Delete).
+   it; some TVs' sdbd doesn't answer that, and then it's removed on the TV (Apps, Settings, TV Studio, Delete).
    With Samsung's tools instead: `sdb connect <IP>`, `tizen install -n FreeMyTV-tizen.wgt -t <serial from sdb
    devices>` and `tizen run -p FreeMyTVio.FreeMyTV -t <serial>`. Updates need the same certificate: the TV refuses
    one signed by another (uninstall first). A retail TV's sdbd only takes files (`filesync_support:push`): nothing
@@ -170,7 +170,7 @@ Developer Mode; Samsung's home screen stays. Two ways:
    a Web Inspector port (Runtime.evaluate works on Tizen 3; screenshots don't; Tizen 2.4 doesn't answer it, nor
    `0 vd_applist`).
 8. **Tell them:** *Autorun Last App* in the TV's settings (under Start Screen Options; where it is changes by year)
-   makes the TV turn on into Free My TV.
+   makes the TV turn on into TV Studio.
 
 ## Releases
 
@@ -223,11 +223,11 @@ Then, in the code:
   *Original* once and confirm everything returned.
 
 LG and Samsung: the web app above. Other TVs that don't run Google TV or Android TV: the way is a Google TV streamer on
-HDMI (Chromecast with Google TV, Google TV Streamer, onn 4K, NVIDIA Shield). Set Free My TV up on the streamer.
+HDMI (Chromecast with Google TV, Google TV Streamer, onn 4K, NVIDIA Shield). Set TV Studio up on the streamer.
 The onn 4K Streaming Box (Amlogic S905Y4, Google TV 14 tested) ships no promo apps of its own, so `DEBLOAT` has no onn
 entries; its system pieces are in `PROTECTED`. USB debugging opens ADB on 5555 there, as the app needs.
 
-**Uninstalled while in Free My TV mode?** The apps it turned off stay off. Bring them back with
+**Uninstalled while in TV Studio mode?** The apps it turned off stay off. Bring them back with
 `adb shell pm enable <package>` (the `DEBLOAT` list and the stock home screen), then
 `adb shell cmd package set-home-activity <stock home activity>` and
 `adb shell settings put secure screensaver_components <stock screensaver>`. On an HY300 with JmLauncher, also
@@ -295,7 +295,7 @@ entries; its system pieces are in `PROTECTED`. USB debugging opens ADB on 5555 t
 - Settings rows that need something this TV lacks stay, dimmed as *Unavailable*: `SettingsActivity.need` names what a
   row needs, `Capabilities.missing` says why it's missing (once per screen), and OK on the row shows it in a toast.
 - The remote's app buttons (`RemoteKeys`, `RemoteKeyService`) use each brand's key codes: they run only on TCL,
-  Vestel, KTC (NextStar), Sony, Xiaomi and Hisense TVs and Formovie projectors, the service is on only in Free My TV mode, and *Original* takes it out of the enabled accessibility
+  Vestel, KTC (NextStar), Sony, Xiaomi and Hisense TVs and Formovie projectors, the service is on only in TV Studio mode, and *Original* takes it out of the enabled accessibility
   services. The system waits for the service on every key, so it lives alone in the `:keys` process: what it reads is
   in `remote-keys.txt` (`Prefs.keyApp`), never in SharedPreferences, and `onKeyEvent` does no heavy work.
   The service is also off while every button is *Nothing*, and always on TCL's Android 11 (`RemoteKeys.FILTER_SAFE`):
@@ -320,7 +320,7 @@ entries; its system pieces are in `PROTECTED`. USB debugging opens ADB on 5555 t
   TV, and PatchWall's All Apps opens the disabled `tvlauncher`. `Prefs.KEY_MI` opens our home screen by default
   ("Xiaomi default", empty, leaves it to PatchWall). Leave PatchWall on: it also shows the TV's input picker.
   Xiaomi TVs with a Home button (MiTV-MOOR0, MediaTek, Android TV 11 tested) send `KEYCODE_BUTTON_3` for YouTube, a
-  global key for the stock home screen (`launcherx`) that Free My TV turns off, and `KEYCODE_BUTTON_5` for PatchWall,
+  global key for the stock home screen (`launcherx`) that TV Studio turns off, and `KEYCODE_BUTTON_5` for PatchWall,
   a global key for the same `partnercustomizer` receiver: both are ours (`Prefs.KEY_XIAOMI_PATCHWALL` is left to the
   TV until an app is picked). Netflix (`BUTTON_6`) stays with the system. Their remote sends one press as a burst of 5
   to 8: `RemoteKeys` opens the app once (Xiaomi only).
@@ -330,7 +330,7 @@ entries; its system pieces are in `PROTECTED`. USB debugging opens ADB on 5555 t
   leaves the key to the TV.
   Hisense (Q6N, MediaTek, Android TV 12 tested) sends `295` for Prime Video, `KEYCODE_BUTTON_3` for YouTube,
   `KEYCODE_ALL_APPS` for its All Apps (3×3) button, `KEYCODE_NOTIFICATION` for the gear and `KEYCODE_PROFILE_SWITCH`
-  for the profile button, all global keys for Google TV's home app (`launcherx`), which Free My TV mode turns off, and
+  for the profile button, all global keys for Google TV's home app (`launcherx`), which TV Studio mode turns off, and
   `607` for Disney+: without the service they do nothing. Netflix (`KEYCODE_STEM_1`) stays with the system. The gear
   opens TV Settings and All Apps opens our own sheet (`Prefs.ALL_APPS`, `HomeActivity.EXTRA_ALL_APPS`); the profile
   button has nothing to open without `launcherx`. Hisense keeps only error logs: `adb shell setprop log.tag.FreeMyTV I`
@@ -341,7 +341,7 @@ entries; its system pieces are in `PROTECTED`. USB debugging opens ADB on 5555 t
   default): turning it on allows it through ADB (`HomeMode.nowPlayingAccess`, `cmd notification allow_listener`; the
   `enabled_notification_listeners` setting grants nothing since Android 8) and proves it took (`Capabilities.LISTENER`,
   else the row shows Unavailable); turning it off, *Original* and the watchdog's revert take it back. The switch to
-  Free My TV mode allows nothing. `HomeMode` sets it, under the `RUN` lock, to what the widget says at that moment (so
+  TV Studio mode allows nothing. `HomeMode` sets it, under the `RUN` lock, to what the widget says at that moment (so
   quick toggles and a revert can't cross), `verifyNow` does the same after a boot or an update, and a screen that finds
   it on but not allowed asks once.
   It unbinds itself as soon as it connects (the permission is all it's for), and the home screen and the screensaver

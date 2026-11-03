@@ -114,7 +114,7 @@ if $TEST_INSTALL; then
     -e 's/android:name="\./android:name="io.freemytv./g' \
     -e "s/android:authorities=\"io.freemytv.photos\"/android:authorities=\"$APP_ID.photos\"/" \
     -e "s/android:taskAffinity=\"io.freemytv.settings\"/android:taskAffinity=\"$APP_ID.settings\"/" \
-    -e 's/android:label="Free My TV"/android:label="TV Studio (Teste)"/g' \
+    -e 's/android:label="TV Studio"/android:label="TV Studio (Teste)"/g' \
     "$MANIFEST"
   grep -F "package=\"$APP_ID\"" "$MANIFEST" >/dev/null || { echo "Test manifest package does not match APP_ID=$APP_ID"; exit 1; }
   grep -F "android:authorities=\"$APP_ID.photos\"" "$MANIFEST" >/dev/null || { echo "Test provider authority does not match APP_ID=$APP_ID"; exit 1; }
