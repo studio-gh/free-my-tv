@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/** Read-only title-and-time feed for the explicitly shared Guiga e Rê calendar. */
+/** Read-only title-and-time feed for an explicitly shared household calendar. */
 final class CalendarAgenda {
     private CalendarAgenda() {}
 
