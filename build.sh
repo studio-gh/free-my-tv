@@ -83,6 +83,7 @@ final class Config {
     static final String WATCHMODE_KEY = "$(prop watchmode_key '')";
     static final String PLEX_URL = "$(prop plex_url '')";
     static final String PLEX_TOKEN = "$(prop plex_token '')";
+    static final String CALENDAR_FEED_URL = "$(prop calendar_feed_url '')";
     static final String TMDB_REGION = "$REGION";
     static final String LATITUDE = "$LAT";
     static final String LONGITUDE = "$LON";
