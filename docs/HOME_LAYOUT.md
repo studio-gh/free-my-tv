@@ -8,7 +8,7 @@ A primeira tela é um painel doméstico, não uma vitrine de streaming. A primei
 
 - Fundo fotográfico usa imagens importadas localmente para o app. A seleção ainda não corresponde a álbuns Google Photos separados por modo.
 - Os quatro seletores de ambiente permanecem compactos e icon-only. Nesta versão usam glifos provisórios já empacotados; os glifos finais de Família (três pessoas incluindo uma criança), Visitas (oito pessoas assimétricas), Viagem (avião) e Arte (quadro) dependem da geração e inclusão dos novos PNGs no catálogo do app.
-- Agenda Guiga e Rê usa o feed compartilhado `https://painel-casa.pages.dev/api/tv/agenda`.
+- A agenda compartilhada usa `calendar_feed_url` em `config.properties`. O endereço não deve ser versionado nem incluído em builds públicos.
 - Não há integração persistente de recados nesta versão. A Home não deve mostrar recados fictícios ou texto que sugira que existe uma caixa de mensagens funcional.
 - A navegação nativa expõe somente Início, Apps e Configurações, que possuem ações implementadas. Não exibir Calendário, Recados, Clima, Filmes & Séries ou Descanso como destinos até que cada página tenha implementação real.
 

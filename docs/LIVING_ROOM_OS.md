@@ -4,11 +4,11 @@
 
 ## Decisões de produto
 
-1. **Uma home, dois contextos pessoais.** Experiência partilhada para a sala, mas com gostos, listas e feedback identificáveis como “Guiga”, “Rê” ou “Nós dois”. Não exigir conta nem backend pago no primeiro ciclo.
+1. **Uma home, dois contextos pessoais.** Experiência partilhada para a sala, mas com gostos, listas e feedback identificáveis como “Perfil 1”, “Perfil 2” ou “Em conjunto”. Não exigir conta nem backend pago no primeiro ciclo.
 2. **Descoberta acima de quantidade.** Mostrar de 3 a 5 escolhas com justificativa, filtros de humor/tempo e disponibilidade no Brasil, em vez de um feed infinito.
 3. **Catálogo primeiro, histórico depois.** Reusar a integração TMDB existente para títulos, posters, gêneros, nota TMDB e provedores brasileiros. IMDb e Rotten Tomatoes só quando uma fonte autorizada e estável disponibilizar esses dados; não raspar sites nem exibir números presumidos.
 4. **Controlo explícito de dados.** Histórico assistido, avaliações e preferências são locais e voluntários. A leitura de histórico entre Netflix, Prime Video, Disney+ e outros não é universalmente exposta ao launcher Android. O sistema deve explicar esse limite e nunca fingir que observou algo que não consegue acessar.
-5. **Privacidade por padrão.** O widget familiar recebe apenas títulos e horários do feed de leitura pública previamente compartilhado. Nunca incluir recados privados, descrição, convidados, local ou tokens no APK/logs.
+5. **Privacidade por padrão.** O widget de agenda recebe apenas títulos e horários de um feed de leitura explicitamente compartilhado. Nunca incluir recados privados, descrição, convidados, local ou tokens no APK/logs.
 6. **Sem paywall para o básico.** Usar APIs gratuitas dentro dos seus limites, cache local e integração existente. Serviços opcionais só entram quando há vantagem clara e custo conhecido.
 
 ## A experiência desejada
@@ -35,7 +35,7 @@
 - **Launcher Android/Google TV:** interface, foco de D-pad, launching de apps e cache. Reusar o estilo/renderer atual e manter trabalho de rede fora da thread visual.
 - **TMDB:** catálogo, gêneros, artwork, avaliação TMDB e provedores de streaming por região. Região padrão de produto: BR.
 - **IMDb / Rotten Tomatoes:** não acoplar UI à fonte até confirmar licença, API, cobertura e regras de exibição. Se a fonte não existir, esconder o selo em vez de substituir ou estimar nota.
-- **Painel Casa:** endpoint público de agenda com os campos mínimos já documentados; cabeçalhos no-cache no cliente, timeout, refresh moderado e última resposta válida.
+- **Agenda compartilhada:** URL configurada localmente por `calendar_feed_url`; cabeçalhos no-cache no cliente, timeout, refresh moderado e última resposta válida. Nunca versionar URLs específicas de residências.
 - **Armazenamento:** SharedPreferences/JSON local versionado e exportável. Nada de login na primeira versão.
 - **Qualidade:** CI para APK e web; artifact de teste identificado como teste; release estável separada; feature flags para recursos que ainda não foram testados na Philips.
 
@@ -64,7 +64,7 @@
 - [ ] Lista local “Quero ver”, persistente após reiniciar.
 
 ### P2 · Escolher em casal
-- [ ] Votação local “Eu / Você / Nós dois”.
+- [ ] Votação local “Perfil 1 / Perfil 2 / Em conjunto”.
 - [ ] Preferências simples e explicação das sugestões.
 - [ ] Botão “surpreenda-nos” com filtros e opção de nova rodada.
 - [ ] Resumo de duração para sessão curta/média/longa.

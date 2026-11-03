@@ -1951,7 +1951,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         cardDim.setColor(tone(L_DIM, 0xADFFFFFF));
         agendaTextPaint.setTextSize(24 * k);
         agendaTextPaint.setColor(drawerInk(0.95f));
-        c.drawText("Agenda · Guiga e Rê", x, r.top + 54 * k, cardTitle);
+        c.drawText("Agenda compartilhada", x, r.top + 54 * k, cardTitle);
         List<String> events = agendaLines;
         float maxWidth = r.width() - 60 * k;
         if (events.isEmpty()) {
@@ -1978,7 +1978,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         agendaTextPaint.setColor(drawerInk(0.95f));
         float x = r.left + 30 * k;
         float maxWidth = r.width() - 60 * k;
-        c.drawText("Agenda · Guiga e Rê", x, r.top + 56 * k, cardTitle);
+        c.drawText("Agenda compartilhada", x, r.top + 56 * k, cardTitle);
         List<String> events = agendaLines;
         if (events.isEmpty()) {
             c.drawText("Agenda indisponível", x, r.top + 132 * k, agendaTextPaint);
@@ -1995,7 +1995,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     private String agendaText() {
-        StringBuilder text = new StringBuilder("Agenda Guiga e Rê");
+        StringBuilder text = new StringBuilder("Agenda compartilhada");
         List<String> events = agendaLines;
         if (events.isEmpty()) return text.append(". Agenda indisponível no momento.").toString();
         for (int i = 0; i < events.size() && i < 6; i++) text.append(". ").append(events.get(i));
@@ -3438,7 +3438,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         cardDim.setColor(0xD9FFFCF4);
         agendaTextPaint.setTextSize(24 * k);
         agendaTextPaint.setColor(0xFFFFFCF4);
-        c.drawText("Agenda · Guiga e Rê", agenda.left + 26 * k, agenda.top + 46 * k, cardTitle);
+        c.drawText("Agenda compartilhada", agenda.left + 26 * k, agenda.top + 46 * k, cardTitle);
         List<String> events = agendaLines;
         if (events.isEmpty()) {
             c.drawText("Agenda indisponível", agenda.left + 26 * k, agenda.top + 102 * k, agendaTextPaint);
