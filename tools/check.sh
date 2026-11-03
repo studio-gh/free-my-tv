@@ -16,6 +16,11 @@ case "$what" in
 esac
 
 if [ "$what" = all ] || [ "$what" = android ]; then
+  bash -n tools/philips-diagnostics.sh
+  if grep -En 'disable-user|pm[[:space:]]+(disable|enable|suspend|unsuspend|uninstall)|set-home-activity|role add-role-holder|adb[^#]*reboot' tools/philips-diagnostics.sh; then
+    echo "Philips diagnostic script must remain read-only." >&2
+    exit 1
+  fi
   ./build.sh
 fi
 
