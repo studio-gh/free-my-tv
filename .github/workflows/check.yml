@@ -53,6 +53,14 @@ jobs:
           echo "ready=true" >> "$GITHUB_OUTPUT"
           echo "Test APK uses the persistent TV_STUDIO_TEST_KEYSTORE signing identity." >> "$GITHUB_STEP_SUMMARY"
 
+      # The Philips inventory must parse and remain read-only.
+      - name: Validate Philips diagnostic script
+        run: |
+          bash -n tools/philips-diagnostics.sh
+          if grep -En 'disable-user|pm[[:space:]]+(disable|enable|suspend|unsuspend|uninstall)|set-home-activity|role add-role-holder|adb[^#]*reboot' tools/philips-diagnostics.sh; then
+            echo "Philips diagnostic script must remain read-only." >&2
+            exit 1
+          fi
       # Verify native symbol references even when signing secrets are not configured.
       - name: Validate native symbol assets
         run: python3 tools/check_symbols.py
