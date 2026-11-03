@@ -312,6 +312,7 @@ No accounts, no analytics, no tracking. The app talks to TMDB, Open-Meteo (with 
 
 - [Contributing](CONTRIBUTING.md)
 - [Philips compatibility diagnostics](docs/PHILIPS_DIAGNOSTICS.md), a read-only device inventory.
+- [Test signing setup](docs/TEST_SIGNING.md), using a key generated locally rather than a public artifact.
 - Household-specific values such as `calendar_feed_url` belong in the ignored local `config.properties`, never in source control or public builds.
 
 ## Developer notes
