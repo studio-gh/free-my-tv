@@ -19,6 +19,27 @@ if [ "$what" = all ] || [ "$what" = android ]; then
   ./build.sh
 fi
 
+# Native symbol catalogue: every literal Java reference must have a bundled PNG.
+if [ "$what" = all ] || [ "$what" = android ]; then
+  python3 - <<'PY'
+import pathlib
+import re
+import sys
+
+source = pathlib.Path("app/src/io/freemytv")
+assets = pathlib.Path("app/assets/symbols")
+pattern = re.compile(r'Symbols\.(?:draw|warm)\(getContext\(\),\s*"([^"]+)"')
+used = set()
+for path in source.glob("*.java"):
+    used.update(pattern.findall(path.read_text(encoding="utf-8")))
+missing = sorted(name for name in used if not (assets / (name + ".png")).is_file())
+if missing:
+    print("Missing bundled symbol PNGs: " + ", ".join(missing), file=sys.stderr)
+    sys.exit(1)
+print("Native symbol assets verified:", len(used))
+PY
+fi
+
 if [ "$what" = all ] || [ "$what" = web ]; then
   python3 tools/translate.py --check
 

@@ -70,7 +70,7 @@ final class Recs {
     private static final int ANIMATION = 16;
     private static final long LIST_EVERY = 6 * 3600_000L;
     /** Bump when what is saved for each title changes (the saved list is discarded and fetched again). */
-    private static final int CACHE_VERSION = 5;
+    private static final int CACHE_VERSION = 6;
     private static final int MANHA = 0, TARDE = 1, NOITE = 2;
     /** Service name on TMDB (part of the name, lowercase) → TV app (HomeApps key, package). */
     private static final String[][] SERVICES = {
@@ -637,6 +637,12 @@ final class Recs {
         String backdrop = o.optString("backdrop_path", "");
         if (backdrop.isEmpty() || "null".equals(backdrop)) return;
         if (Config.HIDE_ANIMATION && animated(o)) return;
+        // A popularity spike alone is not enough for a recommendation. Require a usable rating
+        // and a minimum number of votes, with a slightly lower vote threshold for TV series.
+        double rating = o.optDouble("vote_average", 0);
+        int votes = o.optInt("vote_count", 0);
+        int minimumVotes = kind.equals("movie") ? 80 : 35;
+        if (rating < 6.3 || votes < minimumVotes) return;
         Pick p = new Pick();
         p.id = o.optInt("id");
         p.kind = kind;
@@ -679,6 +685,9 @@ final class Recs {
         }
         String length = p.kind.equals("movie") ? runtime(o.optInt("runtime")) : seasons(o.optInt("number_of_seasons"));
         if (length != null) parts.add(length);
+        double rating = o.optDouble("vote_average", 0);
+        int votes = o.optInt("vote_count", 0);
+        if (rating > 0 && votes > 0) parts.add(String.format(Locale.US, "TMDB %.1f/10", rating));
         JSONObject wp = o.optJSONObject("watch/providers");
         JSONObject br = wp == null ? null : wp.optJSONObject("results") == null ? null : wp.optJSONObject("results").optJSONObject(REGION);
         JSONArray flat = br == null ? null : br.optJSONArray("flatrate");

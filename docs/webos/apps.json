@@ -10,7 +10,7 @@
   "packages": [
     {
       "id": "io.freemytv",
-      "title": "Free My TV",
+      "title": "TV Studio",
       "iconUri": "https://freemytv.io/assets/icon-512.png",
       "shortDescription": "A fast, ad-free home screen: your apps on a glass shelf, the weather and prices, day and night.",
       "pool": "main",
@@ -19,10 +19,10 @@
         "id": "io.freemytv",
         "version": "1.2.0",
         "type": "web",
-        "title": "Free My TV",
+        "title": "TV Studio",
         "appDescription": "A fast, ad-free home screen: your apps on a glass shelf, the weather and prices, day and night.",
         "iconUri": "https://freemytv.io/assets/icon-512.png",
-        "sourceUrl": "https://github.com/simbasjungles/free-my-tv",
+        "sourceUrl": "https://github.com/studio-gh/free-my-tv",
         "rootRequired": false,
         "ipkUrl": "https://freemytv.io/webos/FreeMyTV-webos-1.2.0.ipk",
         "ipkHash": {
