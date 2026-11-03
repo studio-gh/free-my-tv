@@ -64,7 +64,11 @@ jobs:
       # Verify native symbol references even when signing secrets are not configured.
       - name: Validate native symbol assets
         run: python3 tools/check_symbols.py
-      # Validate the launcher and also publish a generic APK for TV installation.
+      # Always compile the Android app. Without persistent signing, this disposable runner build is validation only.
+      - name: Build validation APK (not uploaded)
+        if: steps.test_signing.outputs.ready != 'true'
+        run: ./build.sh --generic --test-install
+      # With the persistent key configured, publish an installable test artifact.
       - name: Build generic Google TV APK
         if: steps.test_signing.outputs.ready == 'true'
         run: ./build.sh --generic --test-install
