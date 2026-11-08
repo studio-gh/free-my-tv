@@ -3384,8 +3384,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         c.drawText(dateText.toUpperCase(java.util.Locale.ROOT),
                 x - Ui.leftBearing(lDate, dateText), 150 * k, lDate);
 
-        // A quiet digital clock in a small glass capsule, aligned to the upper-right safe area.
-        RectF clockCapsule = new RectF((CONTENT_R - 190) * k, 104 * k, CONTENT_R * k, 158 * k);
+        // Keep the clock left of the top-right input/settings actions; the two controls must never overlap.
+        RectF clockCapsule = new RectF((CONTENT_R - 330) * k, 104 * k, (CONTENT_R - 140) * k, 158 * k);
         fill.setShader(null);
         fill.setColor(0x702C2C2C);
         c.drawRoundRect(clockCapsule, 28 * k, 28 * k, fill);
