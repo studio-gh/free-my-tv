@@ -335,6 +335,7 @@ public class SettingsActivity extends Activity {
                             : Ui.tr("not on the shelf"));
                 }
                 case TMDB_KEY:
+                case OMDB_KEY:
                     if (row >= keyRowIds.length) return "";
                     // TalkBack can't see the drawn text: the first row also says what the key is for and how to get one.
                     return row == 0 && keyHelp != null ? keyLabel(keyRowIds[0]) + ". " + keyHelp : keyLabel(keyRowIds[row]);
@@ -1322,6 +1323,14 @@ public class SettingsActivity extends Activity {
             }
         };
 
+        private static String readUtf8(java.io.InputStream in) throws IOException {
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            byte[] buffer = new byte[2048];
+            int n;
+            while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
+            return out.toString("UTF-8");
+        }
+
         /** Validates an OMDb key without ever logging or displaying the request URL. */
         private String checkOmdbKey(String key) {
             java.net.HttpURLConnection c = null;
@@ -1332,7 +1341,7 @@ public class SettingsActivity extends Activity {
                 c.setConnectTimeout(5000);
                 c.setReadTimeout(7000);
                 if (c.getResponseCode() != 200) return Ui.tr("OMDb couldn't validate this key. Check it and try again.");
-                JSONObject data = new JSONObject(new String(c.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+                JSONObject data = new JSONObject(readUtf8(c.getInputStream()));
                 if (data.optBoolean("Response", false)) return null;
                 return Ui.tr("OMDb rejected this key. Check it and try again.");
             } catch (Exception e) {
