@@ -1,7 +1,7 @@
 (() => {
   const $ = id => document.getElementById(id);
   const state = { pin: "", collection: "family", connected: false, imageUrls: [] };
-  const names = { family: "TV: Família", visits: "TV: Visitas", travel: "TV: Viagens", art: "TV: Arte" };
+  const names = { family: "TV: Família", visits: "TV: Visitas", travel: "TV: Viagens", art: "TV: Art" };
 
   function toast(message) {
     $("toast").textContent = message;
