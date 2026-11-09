@@ -81,6 +81,97 @@
     if (!response.ok) throw new Error((await response.json()).error || "Falha no envio.");
   }
 
+  function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  function durationMs(value, fallback) {
+    const seconds = Number.parseFloat(String(value || ""));
+    return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : fallback;
+  }
+
+  async function pickerRequest(path, token, options = {}) {
+    const response = await fetch(`https://photospicker.googleapis.com/v1/${path}`, {
+      ...options,
+      headers: { Authorization: `Bearer ${token}`, ...(options.headers || {}) }
+    });
+    if (!response.ok) {
+      let detail = "";
+      try { detail = (await response.json()).error?.message || ""; } catch {}
+      throw new Error(detail || `Google Fotos respondeu com erro (${response.status}).`);
+    }
+    return response.status === 204 ? null : response.json();
+  }
+
+  async function importFromGooglePhotos(token, pickerWindow) {
+    const session = await pickerRequest("sessions", token, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pickingConfig: { maxItemCount: "100" } })
+    });
+    if (!session?.id || !session?.pickerUri) throw new Error("O Google não criou a sessão de seleção.");
+    pickerWindow.location.href = session.pickerUri + "/autoclose";
+
+    const timeout = durationMs(session.pollingConfig?.timeoutIn, 5 * 60 * 1000);
+    const deadline = Date.now() + Math.min(timeout, 10 * 60 * 1000);
+    let ready = false;
+    while (Date.now() < deadline) {
+      await wait(durationMs(session.pollingConfig?.pollInterval, 3000));
+      const current = await pickerRequest(`sessions/${encodeURIComponent(session.id)}`, token);
+      if (current.mediaItemsSet) { ready = true; break; }
+    }
+    if (!ready) throw new Error("A seleção expirou ou não foi concluída. Tente novamente.");
+
+    let pageToken = "";
+    let imported = 0;
+    do {
+      const query = new URLSearchParams({ sessionId: session.id, pageSize: "100" });
+      if (pageToken) query.set("pageToken", pageToken);
+      const page = await pickerRequest(`mediaItems?${query.toString()}`, token);
+      for (const item of page.mediaItems || []) {
+        const media = item.mediaFile;
+        if (!media?.baseUrl || !String(media.mimeType || "").startsWith("image/")) continue;
+        const imageResponse = await fetch(media.baseUrl + "=w1920-h1080", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!imageResponse.ok) continue;
+        const blob = await imageResponse.blob();
+        const file = new File([blob], media.filename || `google-photo-${item.id}.jpg`, {
+          type: media.mimeType || blob.type || "image/jpeg"
+        });
+        await upload(file);
+        imported++;
+        toast(`Importando fotos… ${imported}`);
+      }
+      pageToken = page.nextPageToken || "";
+    } while (pageToken);
+
+    await pickerRequest(`sessions/${encodeURIComponent(session.id)}`, token, { method: "DELETE" });
+    await refresh();
+    toast(imported ? `${imported} foto(s) adicionada(s) a ${names[state.collection]}.` : "Nenhuma foto compatível foi selecionada.");
+  }
+
+  async function startGooglePicker() {
+    const clientId = window.TV_STUDIO_CONFIG?.googleClientId;
+    if (!clientId || !window.google?.accounts?.oauth2) {
+      return toast("O acesso do Google Fotos ainda não está configurado.");
+    }
+    const pickerWindow = window.open("about:blank", "tv-studio-google-photos");
+    if (!pickerWindow) return toast("Permita a abertura de janelas para escolher as fotos.");
+    try {
+      const token = await new Promise((resolve, reject) => {
+        const client = google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: "https://www.googleapis.com/auth/photospicker.mediaitems.readonly",
+          callback: result => result.error ? reject(new Error(result.error_description || result.error)) : resolve(result.access_token),
+          error_callback: error => reject(new Error(error.message || "Não foi possível autenticar no Google."))
+        });
+        client.requestAccessToken();
+      });
+      await importFromGooglePhotos(token, pickerWindow);
+    } catch (error) {
+      pickerWindow.close();
+      toast(error.message || "Não foi possível importar as fotos.");
+    }
+  }
+
   $("connect").addEventListener("click", connect);
   $("pin").addEventListener("keydown", event => { if (event.key === "Enter") connect(); });
   document.querySelectorAll("[data-collection]").forEach(button => button.addEventListener("click", async () => {
@@ -104,7 +195,5 @@
     event.target.value = "";
   });
 
-  $("google-picker").addEventListener("click", () => {
-    toast("A conexão Google será ativada na próxima etapa de configuração.");
-  });
+  $("google-picker").addEventListener("click", startGooglePicker);
 })();
