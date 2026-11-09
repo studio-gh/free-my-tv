@@ -1432,9 +1432,9 @@ public class SettingsActivity extends Activity {
         private void typedKey(String text) {
             if (text.trim().isEmpty() || keyChecking) return;
             keyChecking = true;
-            setKeyStatus(Ui.tr("Checking the key with TMDB…"), false);
+            setKeyStatus(Ui.tr(configuringOmdb ? "Checking the key with OMDb…" : "Checking the key with TMDB…"), false);
             keyRowsChanged();
-            new Thread(() -> saveKey(text), "TmdbKey").start();
+            new Thread(() -> saveKey(text), configuringOmdb ? "OmdbKey" : "TmdbKey").start();
         }
 
         /** Asks, then forgets the key given on the TV (one built in from config.properties is used again). */
@@ -1792,7 +1792,7 @@ public class SettingsActivity extends Activity {
                     ? Ui.tr("Send them from a computer: see “Your own photos” in the README.")
                     : Ui.tr("OK removes them; the arrows turn them on or off."))
                     : screen == POWER && powerRow() != P_SHOW && unavailable(focus) == null ? Ui.tr("OK opens the list. ← → change the value.")
-                    : screen == HOME_SETTINGS && from + focus == keyRow() ? Ui.tr("OK: send it from your phone, or type it.")
+                    : screen == HOME_SETTINGS && (from + focus == keyRow() || from + focus == omdbRow()) ? Ui.tr("OK: send it from your phone, or type it.")
                     : screen == HOME_SETTINGS && from + focus == updatesRow() ? (Updates.ready(updates, installed)
                     ? Ui.tr("OK installs it; Android asks first.") : Ui.tr("OK checks for a new version."))
                     : Ui.tr("OK or the arrows change the value.")), LIST_X * k + 30 * k, hy, hint);
