@@ -287,7 +287,7 @@ final class KeyPage {
     }
 
     private byte[] result(String why) {
-        StringBuilder b = top();
+        StringBuilder b = top(omdb);
         if (why == null) {
             b.append("<p class=ok>").append(esc(Ui.tr("Saved on the TV. You can close this page."))).append("</p>");
         } else {
