@@ -829,7 +829,8 @@ final class Recs {
     }
 
     private long sourceStamp() {
-        long stamp = ((key().hashCode() * 31L + REGION.hashCode()) * 31L + (Config.HIDE_ANIMATION ? 1 : 0)) * 31L + Config.PLEX_URL.hashCode();
+        long stamp = (((key().hashCode() * 31L + Prefs.omdbKey().hashCode()) * 31L + REGION.hashCode())
+                * 31L + (Config.HIDE_ANIMATION ? 1 : 0)) * 31L + Config.PLEX_URL.hashCode();
         for (String[] service : SERVICES) stamp = stamp * 31L + (installed(service[2]) ? service[2].hashCode() : 0);
         return stamp;
     }
