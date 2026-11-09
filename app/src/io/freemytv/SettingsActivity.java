@@ -1255,7 +1255,7 @@ public class SettingsActivity extends Activity {
         private void closeKeyScreen() {
             stopKeyPage();
             screen = HOME_SETTINGS;
-            int row = keyRow(), rows = settingLabels().length;
+            int row = configuringOmdb ? omdbRow() : keyRow(), rows = settingLabels().length;
             pickScroll = Math.max(0, Math.min(row - 3, rows - Math.min(SETTINGS_VISIBLE, rows)));
             focus = row - pickScroll;
         }
@@ -1322,6 +1322,26 @@ public class SettingsActivity extends Activity {
             }
         };
 
+        /** Validates an OMDb key without ever logging or displaying the request URL. */
+        private String checkOmdbKey(String key) {
+            java.net.HttpURLConnection c = null;
+            try {
+                String url = "https://www.omdbapi.com/?i=tt0133093&apikey="
+                        + java.net.URLEncoder.encode(key, "UTF-8") + "&r=json";
+                c = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+                c.setConnectTimeout(5000);
+                c.setReadTimeout(7000);
+                if (c.getResponseCode() != 200) return Ui.tr("OMDb couldn't validate this key. Check it and try again.");
+                JSONObject data = new JSONObject(new String(c.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+                if (data.optBoolean("Response", false)) return null;
+                return Ui.tr("OMDb rejected this key. Check it and try again.");
+            } catch (Exception e) {
+                return Ui.tr("Couldn't reach OMDb. Check the TV's connection and try again.");
+            } finally {
+                if (c != null) c.disconnect();
+            }
+        }
+
         /** Off the UI thread: checks the key with TMDB and saves it if it works. Null when it's saved, else why not. */
         private String saveKey(String pasted) {
             String key = Recs.cleanKey(pasted);
@@ -1382,12 +1402,12 @@ public class SettingsActivity extends Activity {
             if (keyChecking) return;
             EditText field = new EditText(activity);
             field.setSingleLine(true);
-            field.setHint(Ui.tr("API Read Access Token or API Key"));
+            field.setHint(Ui.tr(configuringOmdb ? "OMDb API key" : "API Read Access Token or API Key"));
             field.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
                     | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
             field.setImeOptions(EditorInfo.IME_ACTION_DONE);
             AlertDialog dialog = new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                    .setTitle(Ui.tr("TMDB key"))
+                    .setTitle(Ui.tr(configuringOmdb ? "OMDb key" : "TMDB key"))
                     .setView(field)
                     .setPositiveButton(Ui.tr("Save"), (d, which) -> typedKey(field.getText().toString()))
                     .setNegativeButton(Ui.tr("Cancel"), null)
