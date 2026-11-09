@@ -940,7 +940,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         h.label = Recs.periodLabel();
         h.title = p.title == null ? "" : p.title;
-        h.meta = p.meta == null ? "" : p.meta;
+        h.meta = ratingMeta(p);
         h.button = p.pkg != null;
         h.dots = picks.size();
         h.dot = pickIndex;
@@ -3461,6 +3461,19 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         lCardMeta.setColor(tone(L_DIM, 0xFF98989D));
     }
 
+    private static String ratingMeta(Recs.Pick p) {
+        StringBuilder b = new StringBuilder(p.meta == null ? "" : p.meta);
+        if (p.imdbRating != null && !p.imdbRating.isEmpty()) {
+            if (b.length() > 0) b.append("  ·  ");
+            b.append("IMDb ").append(p.imdbRating);
+        }
+        if (p.rottenTomatoes != null && !p.rottenTomatoes.isEmpty()) {
+            if (b.length() > 0) b.append("  ·  ");
+            b.append("RT ").append(p.rottenTomatoes);
+        }
+        return b.toString();
+    }
+
     private boolean picksOn() {
         return Recs.hasKey(getContext());
     }
@@ -3576,11 +3589,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (p == null || base.left < 0 || base.left > (CONTENT_R - 100) * k) return;
         fitPaint.set(lCardTitle);
         c.drawText(TextUtils.ellipsize(p.title, fitPaint, bw, TextUtils.TruncateAt.END).toString(), base.left, base.bottom + 46 * k, lCardTitle);
-        if (open > 0.02f && p.meta != null && !p.meta.isEmpty()) {
+        String details = ratingMeta(p);
+        if (open > 0.02f && !details.isEmpty()) {
             fitPaint.set(lCardMeta);
             int a = lCardMeta.getAlpha();
             lCardMeta.setAlpha(Math.round(a * open));
-            c.drawText(TextUtils.ellipsize(p.meta, fitPaint, bw, TextUtils.TruncateAt.END).toString(), base.left, base.bottom + 80 * k, lCardMeta);
+            c.drawText(TextUtils.ellipsize(details, fitPaint, bw, TextUtils.TruncateAt.END).toString(), base.left, base.bottom + 80 * k, lCardMeta);
             lCardMeta.setAlpha(a);
         }
     }
