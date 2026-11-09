@@ -25,6 +25,6 @@ Collections: `family`, `visits`, `travel`, `art`.
 
 ## Google Photos Picker
 
-The mobile panel is prepared for the Picker API flow. The OAuth client ID is a public browser identifier and belongs in `panel/config.js`; no client secret belongs in the browser. The Google Cloud OAuth consent screen and authorized origin must be configured before connecting Google Photos.
+The Google Photos Picker flow is implemented in the mobile panel. It creates a user-mediated Picker session, opens Google's picker outside an iframe, polls for completion, downloads selected images, and uploads them to R2. It becomes available after the OAuth client ID is configured. The OAuth client ID is a public browser identifier and belongs in `panel/config.js`; no client secret belongs in the browser. The Google Cloud OAuth consent screen and authorized origin must be configured before connecting Google Photos.
 
-The Picker API selection and R2 upload flow will be enabled after the OAuth client ID is configured. The shared album URL itself is not an API credential and is not used by this service.
+The shared album URL itself is not an API credential and is not used by this service. The Picker API asks the user to select the media; it does not silently mirror a shared album.
