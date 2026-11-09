@@ -150,7 +150,7 @@ public class SettingsActivity extends Activity {
 
     static final class SettingsView extends View implements Choreographer.FrameCallback {
         private static final int MAIN = 0, HOME_CHOICE = 1, HOME_SETTINGS = 2, REMOTE_KEYS = 3, PICKER = 4, SHELF_EDIT = 5,
-                POWER = 6, TMDB_KEY = 7, PICKS = 8, PICK_FROM = 9;
+                POWER = 6, TMDB_KEY = 7, PICKS = 8, PICK_FROM = 9, OMDB_KEY = 10;
         private static final float LIST_ROW_H = 68, LIST_ROW_GAP = 6;
         private static final int PICK_VISIBLE = 9;
         private static final float LIST_X = 1000, LIST_R = 1824, LIST_TOP = 186, ROW_GAP = 8, CHOICE_H = 104;
@@ -454,7 +454,8 @@ public class SettingsActivity extends Activity {
                 case PICKER: return Math.min(PICK_VISIBLE, pickLabels.size());
                 case SHELF_EDIT: return Math.min(PICK_VISIBLE, shelfRows.size());
                 case POWER: return powerRows().length;
-                case TMDB_KEY: return keyRowIds.length;
+                case TMDB_KEY:
+                case OMDB_KEY: return keyRowIds.length;
                 case PICKS: return picksLabels().length;
                 case PICK_FROM: return Math.min(PICK_VISIBLE, services.size());
                 default: return Prefs.KEYS.length;
@@ -486,7 +487,7 @@ public class SettingsActivity extends Activity {
             c.drawText(versionName(getContext()), cx, 704 * k, version);
 
             if (screen == MAIN) drawMain(c, seconds); else if (screen == HOME_CHOICE) drawChoice(c); else if (screen == PICKER) drawPicker(c); else if (screen == SHELF_EDIT) drawShelfEditor(c);
-            else if (screen == TMDB_KEY) drawKey(c);
+            else if (screen == TMDB_KEY || screen == OMDB_KEY) drawKey(c);
             else if (screen == PICK_FROM) drawServices(c);
             else drawList(c);
         }
@@ -744,7 +745,7 @@ public class SettingsActivity extends Activity {
                             } else if (screen == PICKER) {
                                 focus = pickFor - 1;
                                 screen = REMOTE_KEYS;
-                            } else if (screen == TMDB_KEY) {
+                            } else if (screen == TMDB_KEY || screen == OMDB_KEY) {
                                 closeKeyScreen();
                             } else if (screen == PICKS) {
                                 focus = PICKS_ROW;
@@ -804,6 +805,7 @@ public class SettingsActivity extends Activity {
             l.add("Solana");
             if (dollar()) l.add(Ui.tr("Dollar"));
             l.add(Ui.tr("TMDB key"));
+            l.add("OMDb key");
             l.add(Ui.tr("Updates"));
             return l.toArray(new String[0]);
         }
@@ -813,8 +815,11 @@ public class SettingsActivity extends Activity {
             return settingLabels().length - 1;
         }
 
-        private int keyRow() {
-            return updatesRow() - 1;
+        private int keyRow() { return updatesRow() - 2; }
+        private int omdbRow() { return updatesRow() - 1; }
+        private static String omdbValue() {
+            String key = Prefs.omdbKey();
+            return key.length() < 4 ? Ui.tr("Not set") : "•••• " + key.substring(key.length() - 4);
         }
 
         /** The TMDB key row: "Not set", or the key's last 4 characters (all that's ever shown of it). */
@@ -853,7 +858,8 @@ public class SettingsActivity extends Activity {
             v[QUOTES_ROW] = onOff(Prefs.quotes());
             // No quotes widget, nowhere to show prices: the coins read as off (and stay locked) until it is back on.
             for (int i = COIN_ROWS; i < v.length - 2; i++) v[i] = onOff(Prefs.quotes() && Prefs.coin(i - COIN_ROWS));
-            v[v.length - 2] = keyValue();
+            v[v.length - 3] = keyValue();
+            v[v.length - 2] = omdbValue();
             v[v.length - 1] = updatesValue();
             return v;
         }
@@ -1222,19 +1228,24 @@ public class SettingsActivity extends Activity {
             return id == K_NEW ? Ui.tr("New code") : id == K_TYPE ? Ui.tr("Type it with the remote") : Ui.tr("Remove the key");
         }
 
-        private void openKeyScreen() {
-            screen = TMDB_KEY;
+        private boolean configuringOmdb;
+        private void openKeyScreen() { openKeyScreen(false); }
+        private void openKeyScreen(boolean omdb) {
+            configuringOmdb = omdb;
+            screen = omdb ? OMDB_KEY : TMDB_KEY;
             pickScroll = 0;
             focus = 0;
             keyStatus = null;
             keyRowIds = new int[0];
             // The steps, in the TV's language, beside the code; the phone's page says the same.
-            String steps = Ui.tr("Free, and it takes two minutes:") + "\n1. " + Ui.tr("Create an account at themoviedb.org.")
+            String steps = omdb ? Ui.tr("Scan the code with your phone, then paste your OMDb API key.")
+                    : Ui.tr("Free, and it takes two minutes:") + "\n1. " + Ui.tr("Create an account at themoviedb.org.")
                     + "\n2. " + Ui.tr("Open Settings → API and request a developer key.")
                     + "\n3. " + Ui.tr("Scan this code with your phone and paste the API Read Access Token (or the API Key) there.");
             int width = Math.round((LIST_R - LIST_X - 60 - QR_SIDE - 40) * k);
             keySteps = StaticLayout.Builder.obtain(steps, 0, steps.length(), notice, width).setLineSpacing(6 * k, 1).build();
-            String purpose = Ui.tr("The key brings the picks: what's trending on your streaming apps, with their photos on the screensaver.");
+            String purpose = omdb ? Ui.tr("Adds IMDb and Rotten Tomatoes ratings to movie and series picks.")
+                    : Ui.tr("The key brings the picks: what's trending on your streaming apps, with their photos on the screensaver.");
             keyPurpose = StaticLayout.Builder.obtain(purpose, 0, purpose.length(), notice, Math.round((LIST_R - LIST_X - 60) * k))
                     .setMaxLines(3).setEllipsize(TextUtils.TruncateAt.END).build();
             keyHelp = purpose + " " + steps.replace('\n', ' ');
@@ -1257,7 +1268,7 @@ public class SettingsActivity extends Activity {
                 setKeyStatus(Ui.tr("The TV isn't on a network: connect it, or type the key."), true);
             } else {
                 try {
-                    keyPage = new KeyPage(lan, keyListener);
+                    keyPage = new KeyPage(lan, keyListener, configuringOmdb);
                     keyQr = qrBitmap(Qr.encode(keyPage.url));
                     // While the code waits (5 minutes at most), the TV's screensaver doesn't cover it.
                     activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -1292,7 +1303,7 @@ public class SettingsActivity extends Activity {
             @Override public void checking() {
                 handler.post(() -> {
                     keyChecking = true;
-                    setKeyStatus(Ui.tr("Checking the key with TMDB…"), false);
+                    setKeyStatus(Ui.tr(configuringOmdb ? "Checking the key with OMDb…" : "Checking the key with TMDB…"), false);
                     keyRowsChanged();
                 });
             }
@@ -1314,13 +1325,14 @@ public class SettingsActivity extends Activity {
         /** Off the UI thread: checks the key with TMDB and saves it if it works. Null when it's saved, else why not. */
         private String saveKey(String pasted) {
             String key = Recs.cleanKey(pasted);
-            String why = key.isEmpty() ? Ui.tr("That doesn't look like a TMDB key.") : Recs.checkKey(key);
-            if (why == null) Prefs.setTmdbKey(key);
+            String why = key.isEmpty() ? Ui.tr(configuringOmdb ? "That doesn't look like an OMDb key." : "That doesn't look like a TMDB key.")
+                    : configuringOmdb ? checkOmdbKey(key) : Recs.checkKey(key);
+            if (why == null) { if (configuringOmdb) Prefs.setOmdbKey(key); else Prefs.setTmdbKey(key); }
             handler.post(() -> {
                 keyChecking = false;
                 if (why == null) {
                     stopKeyPage();   // typed: the phone's page has nothing left to do
-                    setKeyStatus(Ui.tr("Saved. The picks arrive in a moment."), false);
+                    setKeyStatus(Ui.tr(configuringOmdb ? "Saved. Ratings will appear with the next picks." : "Saved. The picks arrive in a moment."), false);
                     Recs.get(getContext()).refreshIfStale();
                 } else {
                     setKeyStatus(why, true);
@@ -1337,10 +1349,10 @@ public class SettingsActivity extends Activity {
             int n = 0;
             if (keyPage == null && !keyChecking) ids[n++] = K_NEW;
             ids[n++] = K_TYPE;
-            if (!Prefs.tmdbKey().isEmpty()) ids[n++] = K_REMOVE;
+            if (!(configuringOmdb ? Prefs.omdbKey() : Prefs.tmdbKey()).isEmpty()) ids[n++] = K_REMOVE;
             boolean added = n > 0 && ids[0] == K_NEW && (keyRowIds.length == 0 || keyRowIds[0] != K_NEW);
             keyRowIds = java.util.Arrays.copyOf(ids, n);
-            if (screen != TMDB_KEY) return;
+            if (screen != TMDB_KEY && screen != OMDB_KEY) return;
             focus = 0;   // a new code just became possible: there first
             if (!added) for (int i = 0; i < n; i++) if (ids[i] == was) focus = i;
             invalidate();
@@ -1352,7 +1364,7 @@ public class SettingsActivity extends Activity {
             TextPaint paint = error ? new TextPaint(warn) : notice;
             keyStatus = StaticLayout.Builder.obtain(text, 0, text.length(), paint, width)
                     .setMaxLines(3).setEllipsize(TextUtils.TruncateAt.END).build();
-            if (screen == TMDB_KEY && running) announceForAccessibility(text);   // not over another app
+            if ((screen == TMDB_KEY || screen == OMDB_KEY) && running) announceForAccessibility(text);   // not over another app
             invalidate();
         }
 
@@ -1399,9 +1411,9 @@ public class SettingsActivity extends Activity {
         /** Asks, then forgets the key given on the TV (one built in from config.properties is used again). */
         private void askRemoveKey() {
             AlertDialog dialog = new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                    .setTitle(Ui.tr("Remove the TMDB key?"))
+                    .setTitle(Ui.tr(configuringOmdb ? "Remove the OMDb key?" : "Remove the TMDB key?"))
                     .setPositiveButton(Ui.tr("Remove"), (d, which) -> {
-                        Prefs.setTmdbKey("");
+                        if (configuringOmdb) Prefs.setOmdbKey(""); else Prefs.setTmdbKey("");
                         keyStatus = null;   // the row and Home Settings say it
                         keyRowsChanged();
                         spoken.focusMoved();
@@ -1414,7 +1426,7 @@ public class SettingsActivity extends Activity {
         /** The rows, the code with the steps beside it, the address under it for a phone without a camera, and the status. */
         private void drawKey(Canvas c) {
             float x = LIST_X * k + 30 * k, pitch = LIST_ROW_H + LIST_ROW_GAP;
-            c.drawText(Ui.tr("TMDB key"), x, (LIST_TOP - 24) * k, keyHeading);
+            c.drawText(Ui.tr(configuringOmdb ? "OMDb key" : "TMDB key"), x, (LIST_TOP - 24) * k, keyHeading);
             int rows = rowCount();
             for (int i = 0; i < rows; i++) {
                 float y = (LIST_TOP + 20 + i * pitch) * k;
@@ -1821,8 +1833,10 @@ public class SettingsActivity extends Activity {
                 updateNow();
                 return;
             } else if (screen == HOME_SETTINGS && pickScroll + focus == keyRow()) {
-                openKeyScreen();
-            } else if (screen == TMDB_KEY) {
+                openKeyScreen(false);
+            } else if (screen == HOME_SETTINGS && pickScroll + focus == omdbRow()) {
+                openKeyScreen(true);
+            } else if (screen == TMDB_KEY || screen == OMDB_KEY) {
                 activateKey();
                 invalidate();
                 spoken.focusMoved();
