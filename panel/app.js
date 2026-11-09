@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { pin: "", collection: "family", connected: false };
+  const state = { pin: "", collection: "family", connected: false, imageUrls: [] };
   const names = { family: "TV: Família", visits: "TV: Visitas", travel: "TV: Viagens", art: "TV: Arte" };
 
   function toast(message) {
@@ -42,6 +42,8 @@
     const data = await response.json();
     const photos = data.photos.filter(photo => photo.collection === state.collection);
     const gallery = $("gallery");
+    state.imageUrls.forEach(url => URL.revokeObjectURL(url));
+    state.imageUrls = [];
     gallery.replaceChildren();
     if (!photos.length) {
       const empty = document.createElement("p");
@@ -56,8 +58,15 @@
       const img = document.createElement("img");
       img.alt = photo.name || names[photo.collection];
       img.loading = "lazy";
-      img.src = photo.url;
-      img.onerror = () => tile.remove();
+      try {
+        const imageResponse = await fetch(photo.url, { headers: headers() });
+        if (!imageResponse.ok) throw new Error("Foto indisponível");
+        const objectUrl = URL.createObjectURL(await imageResponse.blob());
+        state.imageUrls.push(objectUrl);
+        img.src = objectUrl;
+      } catch {
+        continue;
+      }
       tile.append(img);
       gallery.append(tile);
     }
