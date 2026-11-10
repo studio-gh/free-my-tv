@@ -58,7 +58,7 @@ public class HomeActivity extends Activity {
             return;
         }
         if (home != null) home.resume();
-        PhotoSync.syncInBackground(this);
+        PhotoSync.syncInBackground(this, () -> { if (home != null) home.photosChanged(); });
         Updates.tellOnce(this);   // an update the week's check got ready: said once
     }
 
