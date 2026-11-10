@@ -3430,6 +3430,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             String symbol = i == 0 ? "home" : i == 1 ? "apps" : i == 2 ? "cast" : "tv";
             Symbols.draw(getContext(), c, symbol, r.centerX(), r.centerY(), 42 * k,
                     focused ? STUDIO_ACCENT : 0xFFFFFCF4);
+            String[] moodNames = {"Família", "Visitas", "Viagens", "Art"};
+            lCardMeta.setTextAlign(Paint.Align.CENTER);
+            lCardMeta.setTextSize(16 * k);
+            lCardMeta.setColor(focused ? STUDIO_ACCENT : 0xD9FFFCF4);
+            c.drawText(moodNames[i], r.centerX(), r.bottom + 23 * k, lCardMeta);
+            lCardMeta.setTextAlign(Paint.Align.LEFT);
         }
 
         // Family dashboard: a single agenda panel and the four compact ambience controls.
