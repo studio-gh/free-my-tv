@@ -3182,6 +3182,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         spoken.focusMoved();    // new picks under the focused card
     }
 
+    void photosChanged() {
+        updateCards();
+        heroDirty = true;
+        invalidate();
+    }
+
     /** Your photo's background is ready (or new photos came in): draw it. */
     private final Runnable ownReady = () -> {
         if (running) updatePicks();
