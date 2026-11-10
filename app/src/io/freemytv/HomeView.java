@@ -3444,6 +3444,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             lCardMeta.setTextAlign(Paint.Align.LEFT);
         }
 
+        lCardMeta.setTextSize(28 * k);
+
         // Family dashboard: a single agenda panel and the four compact ambience controls.
         RectF agenda = new RectF(980 * k, 178 * k, (CONTENT_R - 70) * k, 690 * k);
         drawerCard(c, agenda);
