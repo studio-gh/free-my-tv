@@ -24,13 +24,13 @@ final class PhotoSync {
 
     static void syncInBackground(Context context) {
         if (syncing || token(context).isEmpty()) return;
-        long last = context.getSharedPreferences("tv_photo_sync", Context.MODE_PRIVATE).getLong("lastSyncAt", 0);
+        long last = prefs(context).getLong("lastSyncAt", 0);
         if (System.currentTimeMillis() - last < 3 * 60 * 60 * 1000L) return;
         syncing = true;
         background.execute(() -> {
             try {
                 sync(context);
-                context.getSharedPreferences("tv_photo_sync", Context.MODE_PRIVATE).edit().putLong("lastSyncAt", System.currentTimeMillis()).apply();
+                prefs(context).edit().putLong("lastSyncAt", System.currentTimeMillis()).commit();
             } catch (Exception e) { AppLog.w("photo sync: " + e.getMessage()); }
             finally { syncing = false; }
         });
@@ -66,12 +66,17 @@ final class PhotoSync {
         return request("/api/tv-photos/pair/start", "POST", null, new JSONObject());
     }
 
+    @SuppressWarnings("deprecation")
+    private static SharedPreferences prefs(Context context) {
+        return context.getSharedPreferences("tv_photo_sync", Context.MODE_MULTI_PROCESS);
+    }
+
     static void saveToken(Context context, String token) {
-        context.getSharedPreferences("tv_photo_sync", Context.MODE_PRIVATE).edit().putString("token", token).apply();
+        prefs(context).edit().putString("token", token).commit();
     }
 
     static String token(Context context) {
-        return context.getSharedPreferences("tv_photo_sync", Context.MODE_PRIVATE).getString("token", "");
+        return prefs(context).getString("token", "");
     }
 
     static int sync(Context context) throws Exception {
@@ -80,7 +85,7 @@ final class PhotoSync {
         JSONObject manifest = request("/api/tv-photos/manifest", "GET", token, null);
         JSONArray photos = manifest.optJSONArray("photos");
         if (photos == null) return 0;
-        SharedPreferences prefs = context.getSharedPreferences("tv_photo_sync", Context.MODE_PRIVATE);
+        SharedPreferences prefs = prefs(context);
         Set<String> downloaded = new HashSet<>(prefs.getStringSet("downloaded", new HashSet<>()));
         File inbox = Photos.privateInbox(context);
         if (!inbox.exists() && !inbox.mkdirs()) throw new Exception("Não foi possível preparar a pasta de fotos.");
