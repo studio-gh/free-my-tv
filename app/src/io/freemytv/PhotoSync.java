@@ -14,9 +14,27 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 final class PhotoSync {
     private PhotoSync() {}
+    private static final ExecutorService background = Executors.newSingleThreadExecutor();
+    private static volatile boolean syncing;
+
+    static void syncInBackground(Context context) {
+        if (syncing || token(context).isEmpty()) return;
+        long last = context.getSharedPreferences("tv_photo_sync", Context.MODE_PRIVATE).getLong("lastSyncAt", 0);
+        if (System.currentTimeMillis() - last < 3 * 60 * 60 * 1000L) return;
+        syncing = true;
+        background.execute(() -> {
+            try {
+                sync(context);
+                context.getSharedPreferences("tv_photo_sync", Context.MODE_PRIVATE).edit().putLong("lastSyncAt", System.currentTimeMillis()).apply();
+            } catch (Exception e) { AppLog.w("photo sync: " + e.getMessage()); }
+            finally { syncing = false; }
+        });
+    }
 
     static JSONObject request(String path, String method, String token, JSONObject body) throws Exception {
         URL url = new URL(Config.PHOTOS_API_URL + path);
@@ -80,7 +98,10 @@ final class PhotoSync {
             c.setRequestProperty("X-TV-Token", token);
             int status = c.getResponseCode();
             if (status < 200 || status >= 300) { c.disconnect(); throw new Exception("Falha ao baixar uma foto (HTTP " + status + ")."); }
-            String ext = photo.optString("name", "").toLowerCase().endsWith(".png") ? ".png" : ".jpg";
+            String originalName = photo.optString("name", "").toLowerCase();
+            String ext = originalName.endsWith(".png") ? ".png" : originalName.endsWith(".webp") ? ".webp"
+                    : originalName.endsWith(".heic") ? ".heic" : originalName.endsWith(".heif") ? ".heif"
+                    : originalName.endsWith(".jpeg") ? ".jpeg" : ".jpg";
             File target = new File(inbox, collection + "__" + id + ext);
             try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(target)) {
                 byte[] buf = new byte[16384]; int n;
