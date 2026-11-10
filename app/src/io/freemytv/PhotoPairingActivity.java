@@ -47,8 +47,13 @@ public final class PhotoPairingActivity extends Activity {
         syncButton = new Button(this); syncButton.setText("Sincronizar fotos agora"); syncButton.setOnClickListener(v -> syncNow()); root.addView(syncButton);
         Button close = new Button(this); close.setText("Voltar"); close.setOnClickListener(v -> finish()); root.addView(close);
         setContentView(root);
-        beginPairing();
-        if (!PhotoSync.token(this).isEmpty()) syncNow();
+        if (!PhotoSync.token(this).isEmpty()) {
+            codeView.setText("✓");
+            statusView.setText("Esta TV já está conectada à biblioteca.");
+            syncNow();
+        } else {
+            beginPairing();
+        }
     }
 
     private TextView text(String value, int size, boolean bold, int color) {
