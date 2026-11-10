@@ -22,14 +22,14 @@ final class PhotoSync {
     private static final ExecutorService background = Executors.newSingleThreadExecutor();
     private static volatile boolean syncing;
 
-    static void syncInBackground(Context context) {
+    static void syncInBackground(Context context, Runnable imported) {
         if (syncing || token(context).isEmpty()) return;
         long last = prefs(context).getLong("lastSyncAt", 0);
         if (System.currentTimeMillis() - last < 3 * 60 * 60 * 1000L) return;
         syncing = true;
         background.execute(() -> {
             try {
-                sync(context, null);
+                sync(context, imported);
                 prefs(context).edit().putLong("lastSyncAt", System.currentTimeMillis()).commit();
             } catch (Exception e) { AppLog.w("photo sync: " + e.getMessage()); }
             finally { syncing = false; }
