@@ -11,47 +11,33 @@
 </head>
 <body>
   <main class="shell">
-    <header class="topbar">
-      <a class="brand" href="./"><span class="bolt">⚡</span><span>TV Studio</span></a>
-      <span class="eyebrow">PAINEL DA CASA</span>
-    </header>
-
-    <section class="intro">
-      <p class="eyebrow">BIBLIOTECA DE FOTOS</p>
-      <h1>As fotos da casa,<br><span>na TV.</span></h1>
-      <p class="sub">Escolha as imagens pelo celular. O TV Studio cuida do resto.</p>
-    </section>
-
+    <header class="topbar"><a class="brand" href="./"><span class="bolt">⚡</span><span>TV Studio</span></a><span class="eyebrow">PAINEL DA CASA</span></header>
+    <section class="intro"><p class="eyebrow">BIBLIOTECA DE FOTOS</p><h1>As fotos da casa,<br><span>na TV.</span></h1><p class="sub">Escolha as imagens pelo celular. O TV Studio cuida do resto.</p></section>
     <section class="panel" aria-labelledby="connection-title">
-      <div class="section-heading">
-        <div><p class="eyebrow">01 / ACESSO</p><h2 id="connection-title">Conectar painel</h2></div>
-        <span class="status" id="status">Não conectado</span>
-      </div>
-      <label for="pin">PIN privado do painel</label>
-      <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Digite seu PIN">
+      <div class="section-heading"><div><p class="eyebrow">01 / ACESSO</p><h2 id="connection-title">Conectar painel</h2></div><span class="status" id="status">Não conectado</span></div>
+      <label for="pin">PIN privado do painel</label><input id="pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Digite seu PIN">
       <button class="button secondary" id="connect">Conectar ao TV Studio</button>
       <p class="hint" id="connection-hint">O PIN será usado apenas nesta sessão e não será salvo.</p>
     </section>
-
+    <section class="panel" id="pairing-panel" aria-labelledby="pairing-title" hidden>
+      <div class="section-heading"><div><p class="eyebrow">02 / DISPOSITIVO</p><h2 id="pairing-title">Conectar uma TV</h2></div></div>
+      <label for="pair-code">Código de 6 números exibido na TV</label>
+      <input id="pair-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000">
+      <button class="button secondary" id="approve-pairing">Autorizar esta TV</button>
+      <p class="hint">O código expira em 10 minutos. A credencial é entregue diretamente à TV e não aparece no painel.</p>
+    </section>
     <section class="panel" aria-labelledby="photos-title">
-      <div class="section-heading">
-        <div><p class="eyebrow">02 / COLEÇÕES</p><h2 id="photos-title">Sua biblioteca</h2></div>
-      </div>
+      <div class="section-heading"><div><p class="eyebrow">03 / COLEÇÕES</p><h2 id="photos-title">Sua biblioteca</h2></div></div>
       <div class="collections" role="group" aria-label="Coleções de fotos">
         <button class="collection active" data-collection="family"><span>Família</span><small>TV: Família</small></button>
         <button class="collection" data-collection="visits"><span>Visitas</span><small>Momentos em casa</small></button>
         <button class="collection" data-collection="travel"><span>Viagens</span><small>Lugares e passeios</small></button>
         <button class="collection" data-collection="art"><span>Arte</span><small>Imagens e referências</small></button>
       </div>
-      <div class="actions">
-        <button class="button primary" id="google-picker" disabled>Escolher no Google Fotos</button>
-        <label class="button secondary upload-label" for="file-input">Enviar fotos do celular</label>
-        <input id="file-input" type="file" accept="image/*" multiple hidden>
-      </div>
+      <div class="actions"><button class="button primary" id="google-picker" disabled>Escolher no Google Fotos</button><label class="button secondary upload-label" for="file-input">Enviar fotos do celular</label><input id="file-input" type="file" accept="image/*" multiple hidden></div>
       <p class="hint" id="picker-hint">A conexão com Google Fotos será liberada após configurar o acesso seguro no Google Cloud.</p>
       <div class="gallery" id="gallery"><p class="empty">Conecte o painel para ver suas fotos.</p></div>
     </section>
-
     <footer><span>TV Studio</span><span>Privado · Sincronização local na TV</span></footer>
   </main>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
