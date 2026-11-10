@@ -302,5 +302,11 @@
   "{n} ms": "{n} ms",
   "{time} left": "faltam {time}",
   "{version} is out: build it again": "Saiu a {version}: compile de novo",
-  "← → to move · OK to drop · Back to cancel": "← → para mover · OK para soltar · Voltar para cancelar"
+  "← → to move · OK to drop · Back to cancel": "← → para mover · OK para soltar · Voltar para cancelar",
+  "Screensaver source": "Origem do descanso de tela",
+  "Connect photo library": "Conectar biblioteca de fotos",
+  "Photos · selected mood": "Fotos · mood selecionado",
+  "Movie & series picks": "Sugestões de filmes e séries",
+  "Arrows switch between mood photos and entertainment picks.": "As setas alternam entre fotos do mood e sugestões de entretenimento.",
+  "Connect this TV and sync photos from Painel Casa.": "Conecte esta TV e sincronize as fotos pelo Painel Casa."
 }
