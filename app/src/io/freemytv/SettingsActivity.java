@@ -808,12 +808,14 @@ public class SettingsActivity extends Activity {
             l.add(Ui.tr("TMDB key"));
             l.add("OMDb key");
             l.add(Ui.tr("Updates"));
+            l.add(Ui.tr("Screensaver source"));
+            l.add(Ui.tr("Connect photo library"));
             return l.toArray(new String[0]);
         }
 
         /** The Updates row: the last one, after the coins and the TMDB key. */
         private int updatesRow() {
-            return settingLabels().length - 1;
+            return settingLabels().length - 3;
         }
 
         private int keyRow() { return updatesRow() - 2; }
@@ -858,10 +860,12 @@ public class SettingsActivity extends Activity {
             v[PLAYING_ROW] = onOff(Prefs.nowPlaying());
             v[QUOTES_ROW] = onOff(Prefs.quotes());
             // No quotes widget, nowhere to show prices: the coins read as off (and stay locked) until it is back on.
-            for (int i = COIN_ROWS; i < v.length - 2; i++) v[i] = onOff(Prefs.quotes() && Prefs.coin(i - COIN_ROWS));
-            v[v.length - 3] = keyValue();
-            v[v.length - 2] = omdbValue();
-            v[v.length - 1] = updatesValue();
+            for (int i = COIN_ROWS; i < v.length - 5; i++) v[i] = onOff(Prefs.quotes() && Prefs.coin(i - COIN_ROWS));
+            v[v.length - 5] = keyValue();
+            v[v.length - 4] = omdbValue();
+            v[v.length - 3] = updatesValue();
+            v[v.length - 2] = Prefs.saverPhotos() ? Ui.tr("Photos · selected mood") : Ui.tr("Movie & series picks");
+            v[v.length - 1] = "›";
             return v;
         }
 
@@ -1121,6 +1125,11 @@ public class SettingsActivity extends Activity {
                 return;
             }
             int row = pickScroll + focus;
+            if (screen == HOME_SETTINGS && row == updatesRow() + 1) {
+                Prefs.setSaverPhotos(!Prefs.saverPhotos());
+                invalidate();
+                return;
+            }
             switch (row) {
                 case 0: break;   // OK opens the language picker.
                 case 1: {
@@ -1793,6 +1802,8 @@ public class SettingsActivity extends Activity {
                     : Ui.tr("OK removes them; the arrows turn them on or off."))
                     : screen == POWER && powerRow() != P_SHOW && unavailable(focus) == null ? Ui.tr("OK opens the list. ← → change the value.")
                     : screen == HOME_SETTINGS && (from + focus == keyRow() || from + focus == omdbRow()) ? Ui.tr("OK: send it from your phone, or type it.")
+                    : screen == HOME_SETTINGS && from + focus == updatesRow() + 1 ? Ui.tr("Arrows switch between mood photos and entertainment picks.")
+                    : screen == HOME_SETTINGS && from + focus == updatesRow() + 2 ? Ui.tr("Connect this TV and sync photos from Painel Casa.")
                     : screen == HOME_SETTINGS && from + focus == updatesRow() ? (Updates.ready(updates, installed)
                     ? Ui.tr("OK installs it; Android asks first.") : Ui.tr("OK checks for a new version."))
                     : Ui.tr("OK or the arrows change the value.")), LIST_X * k + 30 * k, hy, hint);
@@ -1860,6 +1871,9 @@ public class SettingsActivity extends Activity {
                 return;
             } else if (screen == HOME_SETTINGS && pickScroll + focus == updatesRow()) {
                 updateNow();
+                return;
+            } else if (screen == HOME_SETTINGS && pickScroll + focus == updatesRow() + 2) {
+                activity.startActivity(new Intent(activity, PhotoPairingActivity.class));
                 return;
             } else if (screen == HOME_SETTINGS && pickScroll + focus == keyRow()) {
                 openKeyScreen(false);
