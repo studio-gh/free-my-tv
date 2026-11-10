@@ -3013,7 +3013,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void a11yFocus(int id) {
         wake();
         int group = (id - 1) / 1000, i = (id - 1) % 1000;
-        if (group == Z_PHOTOS) { photoSectionVisible = true; zone = Z_PHOTOS; photoMoodIndex = Math.max(0, Math.min(3, i)); Prefs.setPhotoMood(photoMoodIndex); heroDirty = true; return; }
+        if (group == Z_PHOTOS) { photoSectionVisible = true; zone = Z_PHOTOS; photoMoodIndex = Math.max(0, Math.min(3, i)); Prefs.setPhotoMood(photoMoodIndex); updateCards(); heroDirty = true; return; }
         if (group == GRID) {
             if (!sheetOpen || i >= others.size()) return;
             gridIndex = i;
@@ -3701,6 +3701,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             if (dx != 0) {
                 photoMoodIndex = Math.max(0, Math.min(3, photoMoodIndex + dx));
                 Prefs.setPhotoMood(photoMoodIndex);
+                updateCards();
                 heroDirty = true;
                 click.move();
                 return true;
