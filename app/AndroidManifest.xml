@@ -236,5 +236,6 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+        <activity android:name=".PhotoPairingActivity" android:exported="false" android:screenOrientation="landscape" android:theme="@style/FreeMyTV.Home" />
     </application>
 </manifest>
