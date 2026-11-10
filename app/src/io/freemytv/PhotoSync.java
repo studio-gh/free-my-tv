@@ -29,7 +29,7 @@ final class PhotoSync {
         syncing = true;
         background.execute(() -> {
             try {
-                sync(context);
+                sync(context, null);
                 prefs(context).edit().putLong("lastSyncAt", System.currentTimeMillis()).commit();
             } catch (Exception e) { AppLog.w("photo sync: " + e.getMessage()); }
             finally { syncing = false; }
@@ -79,7 +79,9 @@ final class PhotoSync {
         return prefs(context).getString("token", "");
     }
 
-    static int sync(Context context) throws Exception {
+    static int sync(Context context) throws Exception { return sync(context, null); }
+
+    static int sync(Context context, Runnable imported) throws Exception {
         String token = token(context);
         if (token.isEmpty()) throw new Exception("Conecte esta TV pelo código de pareamento.");
         JSONObject manifest = request("/api/tv-photos/manifest", "GET", token, null);
@@ -116,7 +118,7 @@ final class PhotoSync {
             count++;
         }
         prefs.edit().putStringSet("downloaded", downloaded).apply();
-        if (count > 0) Photos.importInbox(context, null);
+        if (count > 0) Photos.importInbox(context, imported);
         return count;
     }
 }
