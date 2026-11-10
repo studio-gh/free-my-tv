@@ -3177,7 +3177,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         // Entertainment continues to use its own title backdrop after scrolling down.
         boolean own = photoSectionVisible && Photos.on(getContext()) || !picksOn() && Photos.on(getContext());
         Backdrop b = own ? Photos.backdrop(getContext(), ownReady) : cards.isEmpty() ? null : recs.backdrop(cards.get(0));
-        if (b != null || (cards.isEmpty() && !own)) showBackdrop(b);
+        if (b != null || own || cards.isEmpty()) showBackdrop(b);
         heroDirty = true;
         spoken.focusMoved();    // new picks under the focused card
     }
