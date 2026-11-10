@@ -9,10 +9,9 @@ This service stores selected photos in Cloudflare R2 and exposes a private manif
 3. Add the R2 binding named `TV_PHOTOS` and point it to `tv-studio-photos`.
 4. Add Worker secrets:
    - `ADMIN_PIN`: a long, unique PIN used by the phone panel.
-   - `TV_TOKEN`: a different long, unique token used by the TV.
 5. Deploy the Worker.
 
-The pairing endpoints use the existing R2 bucket for short-lived records. The TV receives a device-specific token only after the panel approves its six-digit code. Pairing records expire after 10 minutes.
+The pairing endpoints use the existing R2 bucket for short-lived records. The TV receives a device-specific token only after the panel approves its six-digit code. Pairing records expire after 10 minutes. The Worker stores only a SHA-256 hash of each device token and validates that token on TV photo requests. No shared TV token is needed.
 
 Do not put either secret in GitHub or in the public panel files.
 
@@ -23,8 +22,8 @@ Do not put either secret in GitHub or in the public panel files.
 - `POST /api/pair/approve` (phone panel, header `X-Admin-Pin`, JSON body with the six-digit code)
 - `GET /api/pair/status?id=<request-id>` (TV polls; receives its device token only after approval)
 - `POST /api/photos/upload` (multipart fields: `file`, `collection`, optional `name`; header `X-Admin-Pin`)
-- `GET /api/manifest` (header `X-TV-Token` or `X-Admin-Pin`)
-- `GET /api/photo/:id?collection=family` (header `X-TV-Token` or `X-Admin-Pin`)
+- `GET /api/manifest` (TV header `X-TV-Token`, issued by pairing; panel may use `X-Admin-Pin`)
+- `GET /api/photo/:id?collection=family` (TV header `X-TV-Token`, issued by pairing; panel may use `X-Admin-Pin`)
 
 Collections: `family`, `visits`, `travel`, `art`.
 
