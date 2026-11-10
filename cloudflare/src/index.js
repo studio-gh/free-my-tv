@@ -136,7 +136,7 @@ async function handleApi(request, env, url) {
 
   const photoMatch = url.pathname.match(/^\/api\/photo\/([a-f0-9-]+)$/i);
   if (photoMatch && request.method === "GET") {
-    if (!authorized(request, env.TV_TOKEN, "x-tv-token") &&
+    if (!(await authorizedTv(request, env.TV_PHOTOS)) &&
         !authorized(request, env.ADMIN_PIN, "x-admin-pin")) return json({ error: "Unauthorized" }, 401);
     const collection = safeCollection(url.searchParams.get("collection"));
     if (!collection) return json({ error: "Invalid collection" }, 400);
