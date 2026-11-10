@@ -1804,6 +1804,7 @@ public class SettingsActivity extends Activity {
                     : screen == HOME_SETTINGS && (from + focus == keyRow() || from + focus == omdbRow()) ? Ui.tr("OK: send it from your phone, or type it.")
                     : screen == HOME_SETTINGS && from + focus == updatesRow() + 1 ? Ui.tr("Arrows switch between mood photos and entertainment picks.")
                     : screen == HOME_SETTINGS && from + focus == updatesRow() + 2 ? Ui.tr("Connect this TV and sync photos from Painel Casa.")
+                    : screen == HOME_SETTINGS && from + focus == updatesRow() + 2 ? Ui.tr("Connect this TV and sync photos from Painel Casa.")
                     : screen == HOME_SETTINGS && from + focus == updatesRow() ? (Updates.ready(updates, installed)
                     ? Ui.tr("OK installs it; Android asks first.") : Ui.tr("OK checks for a new version."))
                     : Ui.tr("OK or the arrows change the value.")), LIST_X * k + 30 * k, hy, hint);
