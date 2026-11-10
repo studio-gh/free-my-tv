@@ -105,11 +105,18 @@ final class Photos {
         List<Recs.Pick> out = new ArrayList<>();
         if (!on(c)) return out;
         List<File> list = files(c);
+        String[] moods = {"family", "visits", "travel", "art"};
+        String selected = moods[Prefs.photoMood()];
         for (int i = 0; i < list.size(); i++) {
+            File file = list.get(i);
+            String name = file.getName();
+            boolean tagged = name.startsWith("family-") || name.startsWith("visits-")
+                    || name.startsWith("travel-") || name.startsWith("art-");
+            if (tagged && !name.startsWith(selected + "-")) continue;
             Recs.Pick p = new Recs.Pick();
             p.kind = "photo";
             p.id = i;
-            p.photo = list.get(i);
+            p.photo = file;
             out.add(p);
         }
         return out;
@@ -243,7 +250,15 @@ final class Photos {
             if (!sent.renameTo(src)) continue;
             // Named by import time (the order they came is the order the screensaver shows them) and by process (the
             // other one may import in the same millisecond); written as .part first, so a crash leaves no half photo.
-            File out = new File(d, String.format(Locale.US, "%013d-%d.jpg", System.currentTimeMillis() + count,
+            String collection = "";
+            int separator = original.indexOf("__");
+            if (separator > 0) {
+                String candidate = original.substring(0, separator).toLowerCase(Locale.ROOT);
+                if (candidate.equals("family") || candidate.equals("visits") || candidate.equals("travel") || candidate.equals("art")) {
+                    collection = candidate + "-";
+                }
+            }
+            File out = new File(d, collection + String.format(Locale.US, "%013d-%d.jpg", System.currentTimeMillis() + count,
                     android.os.Process.myPid()));
             File part = new File(d, out.getName() + ".part");
             try {
