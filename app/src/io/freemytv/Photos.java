@@ -100,19 +100,27 @@ final class Photos {
         return Prefs.photos() && !files(c).isEmpty();
     }
 
+    private static List<File> moodFiles(Context c) {
+        List<File> all = files(c);
+        String[] moods = {"family", "visits", "travel", "art"};
+        String selected = moods[Prefs.photoMood()];
+        List<File> out = new ArrayList<>();
+        for (File file : all) {
+            String name = file.getName();
+            boolean tagged = name.startsWith("family-") || name.startsWith("visits-")
+                    || name.startsWith("travel-") || name.startsWith("art-");
+            if (!tagged || name.startsWith(selected + "-")) out.add(file);
+        }
+        return out;
+    }
+
     /** For the screensaver: the photos as picks (no title, no caption). */
     static List<Recs.Pick> picks(Context c) {
         List<Recs.Pick> out = new ArrayList<>();
         if (!on(c)) return out;
-        List<File> list = files(c);
-        String[] moods = {"family", "visits", "travel", "art"};
-        String selected = moods[Prefs.photoMood()];
+        List<File> list = moodFiles(c);
         for (int i = 0; i < list.size(); i++) {
             File file = list.get(i);
-            String name = file.getName();
-            boolean tagged = name.startsWith("family-") || name.startsWith("visits-")
-                    || name.startsWith("travel-") || name.startsWith("art-");
-            if (tagged && !name.startsWith(selected + "-")) continue;
             Recs.Pick p = new Recs.Pick();
             p.kind = "photo";
             p.id = i;
@@ -139,7 +147,8 @@ final class Photos {
             built = null;
             return null;
         }
-        List<File> list = files(c);
+        List<File> list = moodFiles(c);
+        if (list.isEmpty()) return null;
         File want = list.get((int) ((System.currentTimeMillis() / 3_600_000L) % list.size()));
         if (!want.equals(built) && !want.equals(building)) {
             building = want;
