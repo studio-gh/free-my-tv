@@ -297,6 +297,7 @@ final class Photos {
     static void removeAll(Context c) {
         clear(dir(c));
         clear(privateInbox(c));
+        c.getSharedPreferences("tv_photo_sync", Context.MODE_MULTI_PROCESS).edit().remove("downloaded").putLong("lastSyncAt", 0).apply();
         File in = inbox(c);
         File[] queued = in == null ? null : in.listFiles();
         if (queued != null) for (File f : queued) f.delete();
