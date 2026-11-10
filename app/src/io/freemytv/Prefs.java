@@ -222,6 +222,14 @@ final class Prefs {
     static boolean photos() { return sp().getBoolean("photos", true); }
     static void setPhotos(boolean on) { put("photos", on); }
 
+    /** Selected home mood: family, visits, travel, art. */
+    static int photoMood() { return Math.max(0, Math.min(3, sp().getInt("photoMood", 0))); }
+    static void setPhotoMood(int mood) { put("photoMood", Math.max(0, Math.min(3, mood))); }
+
+    /** Screensaver source: photos by default, or entertainment recommendations. */
+    static boolean saverPhotos() { return sp().getBoolean("saverPhotos", true); }
+    static void setSaverPhotos(boolean photos) { put("saverPhotos", photos); }
+
     static boolean coin(int i) { return sp().getBoolean("coin" + i, true); }
     static void setCoin(int i, boolean on) { put("coin" + i, on); }
 
