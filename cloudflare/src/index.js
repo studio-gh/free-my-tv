@@ -12,6 +12,14 @@ function authorized(request, secret, header) {
   const supplied = request.headers.get(header) || "";
   return Boolean(secret && supplied && supplied === secret);
 }
+async function authorizedTv(request, bucket) {
+  const token = request.headers.get("x-tv-token") || "";
+  if (!/^[a-f0-9]{64}$/.test(token)) return false;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  const hash = [...new Uint8Array(digest)].map(value => value.toString(16).padStart(2, "0")).join("");
+  const device = await readJson(bucket, `devices/${hash}.json`);
+  return Boolean(device && device.active === true);
+}
 function safeCollection(value) { return COLLECTIONS.has(value) ? value : null; }
 function randomHex(bytes = 24) {
   const data = new Uint8Array(bytes);
@@ -46,14 +54,17 @@ async function handleApi(request, env, url) {
     if (!authorized(request, env.ADMIN_PIN, "x-admin-pin")) return json({ error: "Unauthorized" }, 401);
     let body;
     try { body = await request.json(); } catch { return json({ error: "Invalid request" }, 400); }
-    const code = String(body.code || "").replace(/\\D/g, "");
-    if (!/^\\d{6}$/.test(code)) return json({ error: "Digite o código de 6 números exibido na TV." }, 400);
+    const code = String(body.code || "").replace(/\D/g, "");
+    if (!/^\d{6}$/.test(code)) return json({ error: "Digite o código de 6 números exibido na TV." }, 400);
     const codeRecord = await readJson(env.TV_PHOTOS, `pair-codes/${code}.json`);
     if (!codeRecord || codeRecord.expiresAt < Date.now()) return json({ error: "Código expirado. Gere um novo código na TV." }, 410);
     const key = `pairings/${codeRecord.id}.json`;
     const pairing = await readJson(env.TV_PHOTOS, key);
     if (!pairing || pairing.status !== "pending" || pairing.expiresAt < Date.now()) return json({ error: "Este pedido de conexão não está mais disponível." }, 410);
     const token = randomHex(32);
+    const tokenDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+    const tokenHash = [...new Uint8Array(tokenDigest)].map(value => value.toString(16).padStart(2, "0")).join("");
+    await env.TV_PHOTOS.put(`devices/${tokenHash}.json`, JSON.stringify({ active: true, createdAt: new Date().toISOString() }));
     pairing.status = "approved";
     pairing.token = token;
     pairing.approvedAt = Date.now();
@@ -111,7 +122,7 @@ async function handleApi(request, env, url) {
   }
 
   if (url.pathname === "/api/manifest" && request.method === "GET") {
-    if (!authorized(request, env.TV_TOKEN, "x-tv-token") &&
+    if (!(await authorizedTv(request, env.TV_PHOTOS)) &&
         !authorized(request, env.ADMIN_PIN, "x-admin-pin")) return json({ error: "Unauthorized" }, 401);
     const collection = url.searchParams.get("collection");
     const manifest = await readManifest(env.TV_PHOTOS);
@@ -123,7 +134,7 @@ async function handleApi(request, env, url) {
     });
   }
 
-  const photoMatch = url.pathname.match(/^\\/api\\/photo\\/([a-f0-9-]+)$/i);
+  const photoMatch = url.pathname.match(/^\/api\/photo\/([a-f0-9-]+)$/i);
   if (photoMatch && request.method === "GET") {
     if (!authorized(request, env.TV_TOKEN, "x-tv-token") &&
         !authorized(request, env.ADMIN_PIN, "x-admin-pin")) return json({ error: "Unauthorized" }, 401);
