@@ -79,6 +79,7 @@ final class Config {
     private Config() {}
 
     static final String APP_ID = "$APP_ID";
+    static final String PHOTOS_API_URL = "https://painel-casa.pages.dev";
     static final String TMDB_KEY = "$(prop tmdb_key '')";
     static final String WATCHMODE_KEY = "$(prop watchmode_key '')";
     static final String PLEX_URL = "$(prop plex_url '')";
