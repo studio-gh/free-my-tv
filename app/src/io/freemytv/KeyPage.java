@@ -53,12 +53,16 @@ final class KeyPage {
     private final ServerSocket server;
     private final String path;
     private final Listener listener;
+    private final boolean omdb;
     private final AtomicBoolean taken = new AtomicBoolean();      // a key came: the one this page takes
     private final AtomicInteger answering = new AtomicInteger();   // connections being answered
     private volatile boolean closed;
 
-    KeyPage(InetAddress lan, Listener listener) throws IOException {
+    KeyPage(InetAddress lan, Listener listener) throws IOException { this(lan, listener, false); }
+
+    KeyPage(InetAddress lan, Listener listener, boolean omdb) throws IOException {
         this.listener = listener;
+        this.omdb = omdb;
         byte[] random = new byte[12];
         new SecureRandom().nextBytes(random);
         path = "/" + Base64.getUrlEncoder().withoutPadding().encodeToString(random);
@@ -256,23 +260,34 @@ final class KeyPage {
 
     /** How to get a key, then the field to paste it in. */
     private byte[] form() {
-        StringBuilder b = top();
-        b.append("<p>").append(esc(Ui.tr("The key brings the picks: what's trending on your streaming apps, with their photos on the screensaver.")))
-                .append("</p><p>").append(esc(Ui.tr("Free, and it takes two minutes:"))).append("</p><ol><li>")
-                .append(esc(Ui.tr("Create an account at themoviedb.org."))).append("</li><li>")
-                .append(esc(Ui.tr("Open Settings → API and request a developer key."))).append("</li><li>")
-                .append(esc(Ui.tr("Paste the API Read Access Token (or the API Key) here:"))).append("</li></ol>")
-                .append("<p><a class=b href=\"https://www.themoviedb.org/settings/api\" target=_blank rel=noreferrer>")
-                .append(esc(Ui.tr("Open TMDB's API page"))).append("</a></p>")
-                .append("<form method=post action=\"").append(path).append("\">")
-                .append("<textarea name=key aria-label=\"").append(esc(Ui.tr("TMDB key"))).append("\" rows=4 required autocomplete=off autocapitalize=off autocorrect=off spellcheck=false></textarea>")
-                .append("<button>").append(esc(Ui.tr("Send to the TV"))).append("</button></form><p class=s>")
-                .append(esc(Ui.tr("The key stays on your TV. This page works once, for 5 minutes."))).append("</p>");
+        StringBuilder b = top(omdb);
+        if (omdb) {
+            b.append("<p>").append(esc(Ui.tr("IMDb and Rotten Tomatoes ratings for your movie and series picks.")))
+                    .append("</p><p>").append(esc(Ui.tr("Paste your OMDb API key below."))).append("</p>")
+                    .append("<p><a class=b href=\"https://www.omdbapi.com/apikey.aspx\" target=_blank rel=noreferrer>")
+                    .append(esc(Ui.tr("Get an OMDb API key"))).append("</a></p>")
+                    .append("<form method=post action=\"").append(path).append("\">")
+                    .append("<textarea name=key aria-label=\"OMDb key\" rows=2 required autocomplete=off autocapitalize=off autocorrect=off spellcheck=false></textarea>")
+                    .append("<button>").append(esc(Ui.tr("Send to the TV"))).append("</button></form><p class=s>")
+                    .append(esc(Ui.tr("The key stays on your TV. This page works once, for 5 minutes."))).append("</p>");
+        } else {
+            b.append("<p>").append(esc(Ui.tr("The key brings the picks: what's trending on your streaming apps, with their photos on the screensaver.")))
+                    .append("</p><p>").append(esc(Ui.tr("Free, and it takes two minutes:"))).append("</p><ol><li>")
+                    .append(esc(Ui.tr("Create an account at themoviedb.org."))).append("</li><li>")
+                    .append(esc(Ui.tr("Open Settings → API and request a developer key."))).append("</li><li>")
+                    .append(esc(Ui.tr("Paste the API Read Access Token (or the API Key) here:"))).append("</li></ol>")
+                    .append("<p><a class=b href=\"https://www.themoviedb.org/settings/api\" target=_blank rel=noreferrer>")
+                    .append(esc(Ui.tr("Open TMDB's API page"))).append("</a></p>")
+                    .append("<form method=post action=\"").append(path).append("\">")
+                    .append("<textarea name=key aria-label=\"TMDB key\" rows=4 required autocomplete=off autocapitalize=off autocorrect=off spellcheck=false></textarea>")
+                    .append("<button>").append(esc(Ui.tr("Send to the TV"))).append("</button></form><p class=s>")
+                    .append(esc(Ui.tr("The key stays on your TV. This page works once, for 5 minutes."))).append("</p>");
+        }
         return bottom(b);
     }
 
     private byte[] result(String why) {
-        StringBuilder b = top();
+        StringBuilder b = top(omdb);
         if (why == null) {
             b.append("<p class=ok>").append(esc(Ui.tr("Saved on the TV. You can close this page."))).append("</p>");
         } else {
@@ -282,7 +297,7 @@ final class KeyPage {
         return bottom(b);
     }
 
-    private static StringBuilder top() {
+    private static StringBuilder top(boolean omdb) {
         return new StringBuilder(2048).append("<!doctype html><html lang=\"").append(esc(Ui.language))
                 .append("\"><meta charset=utf-8><meta name=viewport content=\"width=device-width,initial-scale=1\">")
                 .append("<title>Free My TV</title><style>")
@@ -293,7 +308,7 @@ final class KeyPage {
                 .append("border-radius:12px;background:#f5f5f7;color:#1c1c1e;font:600 17px system-ui,sans-serif;text-align:center;")
                 .append("text-decoration:none}.b{background:#3a3a3c;color:#f5f5f7}.s{color:#98989d;font-size:15px}")
                 .append(".ok{color:#7ee08a;font-size:20px}.no{color:#ffc266;font-size:20px}</style>")
-                .append("<h1>").append(esc(Ui.tr("TMDB key"))).append(" · Free My TV</h1>");
+                 .append("<h1>").append(esc(omdb ? "OMDb key" : Ui.tr("TMDB key"))).append(" · TV Studio</h1>");
     }
 
     private static byte[] bottom(StringBuilder b) {

@@ -1,0 +1,12 @@
+name = "tv-studio-photos"
+main = "src/index.js"
+compatibility_date = "2026-11-09"
+
+[assets]
+directory = "../panel"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[[r2_buckets]]
+binding = "TV_PHOTOS"
+bucket_name = "tv-studio-photos"

@@ -51,6 +51,7 @@ final class Recs {
         int id;
         String kind;            // "movie" or "tv"
         String title, backdrop, poster, meta = "", app, pkg;   // poster: the portrait image of the narrow cards
+        String imdbRating = "", rottenTomatoes = "", imdbId = "";
         String link;            // opens the title in its app (looked up with Watchmode), or null: the app's home
         boolean detailed;
         java.io.File photo;     // one of your own photos (Photos): no title, no caption
@@ -70,7 +71,7 @@ final class Recs {
     private static final int ANIMATION = 16;
     private static final long LIST_EVERY = 6 * 3600_000L;
     /** Bump when what is saved for each title changes (the saved list is discarded and fetched again). */
-    private static final int CACHE_VERSION = 6;
+    private static final int CACHE_VERSION = 7;
     private static final int MANHA = 0, TARDE = 1, NOITE = 2;
     /** Service name on TMDB (part of the name, lowercase) → TV app (HomeApps key, package). */
     private static final String[][] SERVICES = {
@@ -670,7 +671,10 @@ final class Recs {
     /** Genre, runtime (or seasons) and the service it's on, among the ones the TV has. */
     private void fetchDetails(Pick p) throws Exception {
         JSONObject o = get("/" + p.kind + "/" + p.id
-                + "?language=" + lang() + "&append_to_response=watch/providers,images&include_image_language=null," + Ui.language.replaceAll("-.*", "") + ",en");
+                + "?language=" + lang() + "&append_to_response=watch/providers,images,external_ids&include_image_language=null," + Ui.language.replaceAll("-.*", "") + ",en");
+        JSONObject external = o.optJSONObject("external_ids");
+        p.imdbId = external == null ? "" : external.optString("imdb_id", "");
+        fetchExternalRatings(p);
         p.title = title(p, o);
         String poster = o.optString("poster_path", "");
         if (!poster.isEmpty() && !"null".equals(poster)) p.poster = poster;
@@ -701,6 +705,37 @@ final class Recs {
         if (p.app != null) parts.add(SERVICE_NAME.get(p.app));
         p.meta = String.join(" · ", parts);
         p.detailed = true;
+    }
+
+    /** Fetch IMDb and Rotten Tomatoes ratings only when a private OMDb key is configured. */
+    private void fetchExternalRatings(Pick p) {
+        String key = Prefs.omdbKey();
+        if (key.isEmpty() || p.imdbId == null || !p.imdbId.matches("tt[0-9]{5,12}")) return;
+        HttpURLConnection c = null;
+        try {
+            String url = "https://www.omdbapi.com/?i=" + URLEncoder.encode(p.imdbId, "UTF-8")
+                    + "&apikey=" + URLEncoder.encode(key, "UTF-8") + "&r=json";
+            c = (HttpURLConnection) new URL(url).openConnection();
+            c.setConnectTimeout(5000);
+            c.setReadTimeout(7000);
+            c.setRequestProperty("Accept", "application/json");
+            if (c.getResponseCode() != 200) return;
+            JSONObject data = new JSONObject(read(c.getInputStream()));
+            if (!data.optBoolean("Response", false)) return;
+            JSONArray ratings = data.optJSONArray("Ratings");
+            for (int i = 0; ratings != null && i < ratings.length(); i++) {
+                JSONObject rating = ratings.optJSONObject(i);
+                if (rating == null) continue;
+                String source = rating.optString("Source"), value = rating.optString("Value");
+                if (value.isEmpty() || "N/A".equalsIgnoreCase(value)) continue;
+                if ("Internet Movie Database".equals(source) && value.matches("[0-9.]+/10")) p.imdbRating = value;
+                if ("Rotten Tomatoes".equals(source) && value.matches("[0-9]{1,3}%")) p.rottenTomatoes = value;
+            }
+        } catch (Exception ignored) {
+            // External ratings are optional; TMDB recommendations remain available if OMDb is offline.
+        } finally {
+            if (c != null) c.disconnect();
+        }
     }
 
     /**
@@ -794,7 +829,8 @@ final class Recs {
     }
 
     private long sourceStamp() {
-        long stamp = ((key().hashCode() * 31L + REGION.hashCode()) * 31L + (Config.HIDE_ANIMATION ? 1 : 0)) * 31L + Config.PLEX_URL.hashCode();
+        long stamp = (((key().hashCode() * 31L + Prefs.omdbKey().hashCode()) * 31L + REGION.hashCode())
+                * 31L + (Config.HIDE_ANIMATION ? 1 : 0)) * 31L + Config.PLEX_URL.hashCode();
         for (String[] service : SERVICES) stamp = stamp * 31L + (installed(service[2]) ? service[2].hashCode() : 0);
         return stamp;
     }
@@ -1108,7 +1144,9 @@ final class Recs {
                 a.put(new JSONObject().put("id", p.id).put("kind", p.kind).put("title", p.title).put("backdrop", p.backdrop)
                         .put("poster", p.poster == null ? "" : p.poster).put("link", p.link == null ? "" : p.link)
                         .put("meta", p.meta).put("app", p.app == null ? "" : p.app).put("pkg", p.pkg == null ? "" : p.pkg)
-                        .put("detailed", p.detailed));
+                        .put("detailed", p.detailed).put("imdbId", p.imdbId == null ? "" : p.imdbId)
+                        .put("imdbRating", p.imdbRating == null ? "" : p.imdbRating)
+                        .put("rottenTomatoes", p.rottenTomatoes == null ? "" : p.rottenTomatoes));
             }
             SharedPreferences.Editor e = cache.edit().putString("picks", a.toString()).putInt("period", period).putLong("listAt", listAt)
                     .putString("language", listLanguage)
@@ -1138,6 +1176,9 @@ final class Recs {
             p.app = o.optString("app").isEmpty() ? null : o.optString("app");
             p.pkg = o.optString("pkg").isEmpty() ? null : o.optString("pkg");
             p.detailed = o.optBoolean("detailed");
+            p.imdbId = o.optString("imdbId", "");
+            p.imdbRating = o.optString("imdbRating", "");
+            p.rottenTomatoes = o.optString("rottenTomatoes", "");
             out.add(p);
         }
         return out;

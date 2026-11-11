@@ -100,16 +100,31 @@ final class Photos {
         return Prefs.photos() && !files(c).isEmpty();
     }
 
+    private static List<File> moodFiles(Context c) {
+        List<File> all = files(c);
+        String[] moods = {"family", "visits", "travel", "art"};
+        String selected = moods[Prefs.photoMood()];
+        List<File> out = new ArrayList<>();
+        for (File file : all) {
+            String name = file.getName();
+            boolean tagged = name.startsWith("family-") || name.startsWith("visits-")
+                    || name.startsWith("travel-") || name.startsWith("art-");
+            if (!tagged || name.startsWith(selected + "-")) out.add(file);
+        }
+        return out;
+    }
+
     /** For the screensaver: the photos as picks (no title, no caption). */
     static List<Recs.Pick> picks(Context c) {
         List<Recs.Pick> out = new ArrayList<>();
         if (!on(c)) return out;
-        List<File> list = files(c);
+        List<File> list = moodFiles(c);
         for (int i = 0; i < list.size(); i++) {
+            File file = list.get(i);
             Recs.Pick p = new Recs.Pick();
             p.kind = "photo";
             p.id = i;
-            p.photo = list.get(i);
+            p.photo = file;
             out.add(p);
         }
         return out;
@@ -132,7 +147,8 @@ final class Photos {
             built = null;
             return null;
         }
-        List<File> list = files(c);
+        List<File> list = moodFiles(c);
+        if (list.isEmpty()) return null;
         File want = list.get((int) ((System.currentTimeMillis() / 3_600_000L) % list.size()));
         if (!want.equals(built) && !want.equals(building)) {
             building = want;
@@ -243,7 +259,15 @@ final class Photos {
             if (!sent.renameTo(src)) continue;
             // Named by import time (the order they came is the order the screensaver shows them) and by process (the
             // other one may import in the same millisecond); written as .part first, so a crash leaves no half photo.
-            File out = new File(d, String.format(Locale.US, "%013d-%d.jpg", System.currentTimeMillis() + count,
+            String collection = "";
+            int separator = original.indexOf("__");
+            if (separator > 0) {
+                String candidate = original.substring(0, separator).toLowerCase(Locale.ROOT);
+                if (candidate.equals("family") || candidate.equals("visits") || candidate.equals("travel") || candidate.equals("art")) {
+                    collection = candidate + "-";
+                }
+            }
+            File out = new File(d, collection + String.format(Locale.US, "%013d-%d.jpg", System.currentTimeMillis() + count,
                     android.os.Process.myPid()));
             File part = new File(d, out.getName() + ".part");
             try {
@@ -273,6 +297,7 @@ final class Photos {
     static void removeAll(Context c) {
         clear(dir(c));
         clear(privateInbox(c));
+        c.getSharedPreferences("tv_photo_sync", Context.MODE_MULTI_PROCESS).edit().remove("downloaded").putLong("lastSyncAt", 0).apply();
         File in = inbox(c);
         File[] queued = in == null ? null : in.listFiles();
         if (queued != null) for (File f : queued) f.delete();

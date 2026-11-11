@@ -416,6 +416,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     HomeView(Activity a) {
         super(a);
         activity = a;
+        photoMoodIndex = Prefs.photoMood();
         data = HomeData.get(a);
         recs = Recs.get(a);
         playing = new NowPlaying.Watch(a, this::onPlaying);
@@ -940,7 +941,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         h.label = Recs.periodLabel();
         h.title = p.title == null ? "" : p.title;
-        h.meta = p.meta == null ? "" : p.meta;
+        h.meta = ratingMeta(p);
         h.button = p.pkg != null;
         h.dots = picks.size();
         h.dot = pickIndex;
@@ -3012,7 +3013,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void a11yFocus(int id) {
         wake();
         int group = (id - 1) / 1000, i = (id - 1) % 1000;
-        if (group == Z_PHOTOS) { photoSectionVisible = true; zone = Z_PHOTOS; photoMoodIndex = Math.max(0, Math.min(3, i)); heroDirty = true; return; }
+        if (group == Z_PHOTOS) { photoSectionVisible = true; zone = Z_PHOTOS; photoMoodIndex = Math.max(0, Math.min(3, i)); Prefs.setPhotoMood(photoMoodIndex); updateCards(); heroDirty = true; return; }
         if (group == GRID) {
             if (!sheetOpen || i >= others.size()) return;
             gridIndex = i;
@@ -3176,9 +3177,15 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         // Entertainment continues to use its own title backdrop after scrolling down.
         boolean own = photoSectionVisible && Photos.on(getContext()) || !picksOn() && Photos.on(getContext());
         Backdrop b = own ? Photos.backdrop(getContext(), ownReady) : cards.isEmpty() ? null : recs.backdrop(cards.get(0));
-        if (b != null || (cards.isEmpty() && !own)) showBackdrop(b);
+        if (b != null || own || cards.isEmpty()) showBackdrop(b);
         heroDirty = true;
         spoken.focusMoved();    // new picks under the focused card
+    }
+
+    void photosChanged() {
+        updateCards();
+        heroDirty = true;
+        invalidate();
     }
 
     /** Your photo's background is ready (or new photos came in): draw it. */
@@ -3429,7 +3436,15 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             String symbol = i == 0 ? "home" : i == 1 ? "apps" : i == 2 ? "cast" : "tv";
             Symbols.draw(getContext(), c, symbol, r.centerX(), r.centerY(), 42 * k,
                     focused ? STUDIO_ACCENT : 0xFFFFFCF4);
+            String[] moodNames = {"Família", "Visitas", "Viagens", "Art"};
+            lCardMeta.setTextAlign(Paint.Align.CENTER);
+            lCardMeta.setTextSize(16 * k);
+            lCardMeta.setColor(focused ? STUDIO_ACCENT : 0xD9FFFCF4);
+            c.drawText(moodNames[i], r.centerX(), r.bottom + 23 * k, lCardMeta);
+            lCardMeta.setTextAlign(Paint.Align.LEFT);
         }
+
+        lCardMeta.setTextSize(28 * k);
 
         // Family dashboard: a single agenda panel and the four compact ambience controls.
         RectF agenda = new RectF(980 * k, 178 * k, (CONTENT_R - 70) * k, 690 * k);
@@ -3459,6 +3474,19 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         c.drawText("Use o controle remoto para continuar", x, 680 * k, lCardMeta);
         lCardTitle.setColor(tone(L_INK, WHITE));
         lCardMeta.setColor(tone(L_DIM, 0xFF98989D));
+    }
+
+    private static String ratingMeta(Recs.Pick p) {
+        StringBuilder b = new StringBuilder(p.meta == null ? "" : p.meta);
+        if (p.imdbRating != null && !p.imdbRating.isEmpty()) {
+            if (b.length() > 0) b.append("  ·  ");
+            b.append("IMDb ").append(p.imdbRating);
+        }
+        if (p.rottenTomatoes != null && !p.rottenTomatoes.isEmpty()) {
+            if (b.length() > 0) b.append("  ·  ");
+            b.append("RT ").append(p.rottenTomatoes);
+        }
+        return b.toString();
     }
 
     private boolean picksOn() {
@@ -3576,11 +3604,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (p == null || base.left < 0 || base.left > (CONTENT_R - 100) * k) return;
         fitPaint.set(lCardTitle);
         c.drawText(TextUtils.ellipsize(p.title, fitPaint, bw, TextUtils.TruncateAt.END).toString(), base.left, base.bottom + 46 * k, lCardTitle);
-        if (open > 0.02f && p.meta != null && !p.meta.isEmpty()) {
+        String details = ratingMeta(p);
+        if (open > 0.02f && !details.isEmpty()) {
             fitPaint.set(lCardMeta);
             int a = lCardMeta.getAlpha();
             lCardMeta.setAlpha(Math.round(a * open));
-            c.drawText(TextUtils.ellipsize(p.meta, fitPaint, bw, TextUtils.TruncateAt.END).toString(), base.left, base.bottom + 80 * k, lCardMeta);
+            c.drawText(TextUtils.ellipsize(details, fitPaint, bw, TextUtils.TruncateAt.END).toString(), base.left, base.bottom + 80 * k, lCardMeta);
             lCardMeta.setAlpha(a);
         }
     }
@@ -3673,6 +3702,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             }
             if (dx != 0) {
                 photoMoodIndex = Math.max(0, Math.min(3, photoMoodIndex + dx));
+                Prefs.setPhotoMood(photoMoodIndex);
+                updateCards();
                 heroDirty = true;
                 click.move();
                 return true;

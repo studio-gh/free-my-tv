@@ -16,7 +16,7 @@ done
 # CI uses a fresh side-by-side test package when signing keys are not persistent; normal builds keep production ID.
 # Do not reuse a test package signed by a previous ephemeral CI key, or Android will reject the update.
 APP_ID=io.freemytv
-if $TEST_INSTALL; then APP_ID=io.freemytv.paineltest3; fi
+if $TEST_INSTALL; then APP_ID=io.freemytv.paineltest4; fi
 
 # --- Tools
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
@@ -79,6 +79,7 @@ final class Config {
     private Config() {}
 
     static final String APP_ID = "$APP_ID";
+    static final String PHOTOS_API_URL = "https://painel-casa.pages.dev";
     static final String TMDB_KEY = "$(prop tmdb_key '')";
     static final String WATCHMODE_KEY = "$(prop watchmode_key '')";
     static final String PLEX_URL = "$(prop plex_url '')";

@@ -1,0 +1,52 @@
+name: Android build validation
+
+on:
+  pull_request:
+    branches: [feature/photo-moods-picker-clock]
+    paths:
+      - 'app/**'
+      - 'build.sh'
+      - '.github/workflows/android-build.yml'
+  push:
+    branches: [feature/mobile-photo-library]
+    paths:
+      - 'app/**'
+      - 'build.sh'
+      - '.github/workflows/android-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Compile Android test APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Build isolated test APK
+        run: |
+          chmod +x build.sh
+          ./build.sh --generic --test-install
+
+      - name: Upload test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tv-studio-android-test
+          path: FreeMyTV.apk
+          if-no-files-found: error
+          retention-days: 7
